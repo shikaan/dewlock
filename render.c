@@ -155,7 +155,7 @@ static bool render_frame(struct swaylock_surface *surface) {
   cairo_restore(cairo);
 
   // Draw a message
-  draw_text(cairo, 24, 24, "manuel", surface->subpixel);
+  draw_text(cairo, 24, 24, state->username.buffer, surface->subpixel);
   draw_text(cairo, 24, 48, password, surface->subpixel);
   
   cairo_close_path(cairo);

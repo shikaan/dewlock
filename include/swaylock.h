@@ -77,6 +77,11 @@ struct swaylock_password {
 	char *buffer;
 };
 
+struct swaylock_username {
+	size_t len;
+	const char *buffer;
+};
+
 struct swaylock_state {
 	struct loop *eventloop;
 	struct loop_timer *input_idle_timer; // timer to reset input state to IDLE
@@ -90,6 +95,7 @@ struct swaylock_state {
 	struct wl_list images;
 	struct swaylock_args args;
 	struct swaylock_password password;
+	struct swaylock_username username;
 	struct swaylock_xkb xkb;
 	cairo_surface_t *test_surface;
 	cairo_t *test_cairo; // used to estimate font/text sizes

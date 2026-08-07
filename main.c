@@ -1117,6 +1117,15 @@ int main(int argc, char **argv) {
 	wl_list_init(&state.images);
 	set_default_colors(&state.args.colors);
 
+	const char* username = getlogin();
+	if (username) {
+		state.username.buffer = username;
+		state.username.len = strlen(username);
+	} else {
+		state.username.buffer = "user";
+		state.username.len = 5;
+	}
+
 	char *config_path = NULL;
 	int result = parse_options(argc, argv, NULL, NULL, &config_path);
 	if (result != 0) {
