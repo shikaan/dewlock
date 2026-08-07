@@ -71,15 +71,15 @@ struct swaylock_args {
 	bool indicator_idle_visible;
 };
 
-struct swaylock_password {
+struct swaylock_string {
 	size_t len;
-	size_t buffer_len;
-	char *buffer;
+	size_t cap;
+	char *buf;
 };
 
-struct swaylock_username {
+struct swaylock_slice {
 	size_t len;
-	const char *buffer;
+	const char *buf;
 };
 
 struct swaylock_state {
@@ -87,6 +87,7 @@ struct swaylock_state {
 	struct loop_timer *input_idle_timer; // timer to reset input state to IDLE
 	struct loop_timer *auth_idle_timer; // timer to stop displaying AUTH_STATE_INVALID
 	struct loop_timer *clear_password_timer;  // clears the password buffer
+	struct loop_timer *clock_timer;
 	struct wl_display *display;
 	struct wl_compositor *compositor;
 	struct wl_subcompositor *subcompositor;
@@ -94,8 +95,10 @@ struct swaylock_state {
 	struct wl_list surfaces;
 	struct wl_list images;
 	struct swaylock_args args;
-	struct swaylock_password password;
-	struct swaylock_username username;
+	struct swaylock_string password;
+	struct swaylock_slice username;
+	struct swaylock_slice time;
+	struct swaylock_slice date;
 	struct swaylock_xkb xkb;
 	cairo_surface_t *test_surface;
 	cairo_t *test_cairo; // used to estimate font/text sizes
@@ -143,7 +146,7 @@ void swaylock_handle_key(struct swaylock_state *state,
 
 void render(struct swaylock_surface *surface);
 void damage_state(struct swaylock_state *state);
-void clear_password_buffer(struct swaylock_password *pw);
+void clear_password_buffer(struct swaylock_string *pw);
 void schedule_auth_idle(struct swaylock_state *state);
 
 void initialize_pw_backend(int argc, char **argv);

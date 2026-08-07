@@ -110,7 +110,7 @@ bool spawn_comm_child(void) {
 	return true;
 }
 
-bool write_comm_request(struct swaylock_password *pw) {
+bool write_comm_request(struct swaylock_string *pw) {
 	bool result = false;
 	int fd = comm[0][1];
 
@@ -120,7 +120,7 @@ bool write_comm_request(struct swaylock_password *pw) {
 		goto out;
 	}
 
-	if (!write_full(fd, pw->buffer, size)) {
+	if (!write_full(fd, pw->buf, size)) {
 		swaylock_log_errno(LOG_ERROR, "Failed to write pw buffer");
 		goto out;
 	}

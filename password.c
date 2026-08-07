@@ -21,28 +21,28 @@ void clear_buffer(char *buf, size_t size) {
 	}
 }
 
-void clear_password_buffer(struct swaylock_password *pw) {
-	clear_buffer(pw->buffer, pw->buffer_len);
+void clear_password_buffer(struct swaylock_string *pw) {
+	clear_buffer(pw->buf, pw->cap);
 	pw->len = 0;
 }
 
-static bool backspace(struct swaylock_password *pw) {
+static bool backspace(struct swaylock_string *pw) {
 	if (pw->len != 0) {
-		pw->len -= utf8_last_size(pw->buffer);
-		pw->buffer[pw->len] = 0;
+		pw->len -= utf8_last_size(pw->buf);
+		pw->buf[pw->len] = 0;
 		return true;
 	}
 	return false;
 }
 
-static void append_ch(struct swaylock_password *pw, uint32_t codepoint) {
+static void append_ch(struct swaylock_string *pw, uint32_t codepoint) {
 	size_t utf8_size = utf8_chsize(codepoint);
-	if (pw->len + utf8_size + 1 >= pw->buffer_len) {
+	if (pw->len + utf8_size + 1 >= pw->cap) {
 		// TODO: Display error
 		return;
 	}
-	utf8_encode(&pw->buffer[pw->len], codepoint);
-	pw->buffer[pw->len + utf8_size] = 0;
+	utf8_encode(&pw->buf[pw->len], codepoint);
+	pw->buf[pw->len + utf8_size] = 0;
 	pw->len += utf8_size;
 }
 

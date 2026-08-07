@@ -93,6 +93,7 @@ dependencies = [
 
 sources = [
 	'background-image.c',
+	'clock.c',
 	'cairo.c',
 	'comm.c',
 	'log.c',
