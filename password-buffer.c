@@ -73,7 +73,7 @@ char *password_buffer_create(size_t size) {
 }
 
 void password_buffer_destroy(char *buffer, size_t size) {
-	clear_buffer(buffer, size);
+	memset(buffer, 0, size);
 	password_buffer_unlock(buffer, size);
 	free(buffer);
 }

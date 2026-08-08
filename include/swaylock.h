@@ -17,11 +17,8 @@ enum auth_state {
 
 // Indicator state: status of password buffer / typing letters
 enum input_state {
-	INPUT_STATE_IDLE, // nothing happening; other states decay to this after time
-	INPUT_STATE_CLEAR, // displaying message: password buffer was cleared
-	INPUT_STATE_LETTER, // pressed a key that input a letter
-	INPUT_STATE_BACKSPACE, // pressed backspace and removed a letter
-	INPUT_STATE_NEUTRAL, // pressed a key (like Ctrl) that did nothing
+	INPUT_STATE_PRISTINE, // nothing happening; other states decay to this after time
+	INPUT_STATE_DIRTY, // input was touched
 };
 
 struct swaylock_colorset {

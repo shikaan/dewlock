@@ -10,4 +10,4 @@ run apt install -y meson \
   libcrypt-dev \
   libpam0g-dev
 
-entrypoint sh
+entrypoint bash
