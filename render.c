@@ -57,10 +57,12 @@ void render(struct swaylock_surface *surface) {
     cairo_set_operator(cairo, CAIRO_OPERATOR_SOURCE);
     cairo_set_source_u32(cairo, state->args.colors.background);
     cairo_paint(cairo);
-    if (surface->image && state->args.mode != BACKGROUND_MODE_SOLID_COLOR) {
+    if (surface->image &&
+        state->args.background.mode != BACKGROUND_MODE_SOLID_COLOR) {
       cairo_set_operator(cairo, CAIRO_OPERATOR_OVER);
-      render_background_image(cairo, surface->image, state->args.mode,
-                              buffer_width, buffer_height);
+      render_background_image(cairo, surface->image,
+                              state->args.background.mode, buffer_width,
+                              buffer_height);
     }
     cairo_restore(cairo);
     cairo_identity_matrix(cairo);
@@ -131,17 +133,17 @@ static void draw_idle(cairo_t *c, struct swaylock_state *state, double h,
   cairo_text_extents_t extents;
 
   struct swaylock_text opts = {
-      .color = 0xffffffff,
-      .family = "Noto Sans",
+      .color = state->args.colors.text,
+      .family = state->args.font.family,
   };
 
   opts.size = 104;
   opts.weight = CAIRO_FONT_WEIGHT_BOLD;
-  draw_text(c, w, datey, opts, state->time.buf, &extents);
+  draw_text(c, w, datey, opts, state->time, &extents);
 
   opts.size = 32;
   opts.weight = CAIRO_FONT_WEIGHT_NORMAL;
-  draw_text(c, w, datey + extents.height, opts, state->date.buf, &extents);
+  draw_text(c, w, datey + extents.height, opts, state->date, &extents);
 
   opts.size = 16;
   draw_text(c, w, helpy, opts, "Press any key to unlock", &extents);
@@ -176,13 +178,9 @@ static void draw_form(cairo_t *c, struct swaylock_state *state, double h,
   const double inputpadx = 16;
   cairo_text_extents_t extents;
 
-  uint32_t white = 0xffffffff;
-  uint32_t yellow = 0xffdd00ff;
-  uint32_t red = 0xcc6566ff;
-
   struct swaylock_text opts = {
-      .color = white,
-      .family = "Noto Sans",
+      .color = state->args.colors.text,
+      .family = state->args.font.family,
   };
 
   opts.size = 24;
@@ -193,7 +191,7 @@ static void draw_form(cairo_t *c, struct swaylock_state *state, double h,
 
   opts.size = 36;
   opts.weight = CAIRO_FONT_WEIGHT_BOLD;
-  draw_text(c, w, formy, opts, state->username.buf, &extents);
+  draw_text(c, w, formy, opts, state->username, &extents);
 
   const double inputh = 48;
   const double spacing = 24;
@@ -201,7 +199,9 @@ static void draw_form(cairo_t *c, struct swaylock_state *state, double h,
   const double inputx = w / 2 - inputw / 2;
   const double inputy = formy + extents.height + spacing;
 
-  uint32_t color = state->auth_state == AUTH_STATE_INVALID ? red : white;
+  uint32_t color = state->auth_state == AUTH_STATE_INVALID
+                       ? state->args.colors.error
+                       : state->args.colors.text;
 
   cairo_set_source_u32(c, color);
   cairo_set_line_width(c, border);
@@ -209,7 +209,7 @@ static void draw_form(cairo_t *c, struct swaylock_state *state, double h,
   cairo_line_to(c, inputx + inputw, inputy + inputh);
   cairo_stroke(c);
 
-  cairo_set_source_rgba(c, 0.01, 0.01, 0.01, 1);
+  cairo_set_source_u32(c, state->args.colors.overlay);
   cairo_rectangle(c, inputx, inputy, inputw, inputh);
   cairo_fill(c);
 
@@ -221,7 +221,7 @@ static void draw_form(cairo_t *c, struct swaylock_state *state, double h,
   if (state->auth_state == AUTH_STATE_IDLE && state->xkb.caps_lock) {
     opts.size = 12;
     opts.weight = CAIRO_FONT_WEIGHT_BOLD;
-    opts.color = yellow;
+    opts.color = state->args.colors.warning;
     draw_text(c, w, inputy + inputh + spacing, opts, "CAPS LOCK IS ON",
               &extents);
   }
@@ -270,7 +270,7 @@ static bool render_frame(struct swaylock_surface *surface) {
 
   // Clear
   cairo_save(cairo);
-  cairo_set_source_rgba(cairo, 0, 0, 0, 0.3);
+  cairo_set_source_u32(cairo, state->args.colors.overlay);
   cairo_set_operator(cairo, CAIRO_OPERATOR_SOURCE);
   cairo_paint(cairo);
   cairo_restore(cairo);

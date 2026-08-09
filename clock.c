@@ -13,14 +13,13 @@ void state_set_time(struct swaylock_state *state) {
 
   time_t now = time(NULL);
   struct tm *lt = localtime(&now);
-  state->time.len = snprintf(clock, sizeof(clock), "%02d:%02d",
-                             lt->tm_hour, lt->tm_min);
-  state->time.buf = clock;
+  snprintf(clock, sizeof(clock), "%02d:%02d", lt->tm_hour, lt->tm_min);
+  state->time = clock;
 
   strftime(month, sizeof(month), "%B", lt);
-  state->date.len = snprintf(date, sizeof(date), "%s %d, %d",
-                             month, lt->tm_mday, lt->tm_year + 1900);
-  state->date.buf = date;
+  snprintf(date, sizeof(date), "%s %d, %d", month, lt->tm_mday,
+           lt->tm_year + 1900);
+  state->date = date;
 }
 
 static void set_time(void *data) {

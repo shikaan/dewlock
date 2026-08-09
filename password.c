@@ -83,9 +83,6 @@ static void cancel_password_clear(struct swaylock_state *state) {
 }
 
 static void submit_password(struct swaylock_state *state) {
-  if (state->args.ignore_empty && state->password.len == 0) {
-    return;
-  }
   if (state->auth_state == AUTH_STATE_VALIDATING) {
     return;
   }
@@ -101,12 +98,6 @@ static void submit_password(struct swaylock_state *state) {
   }
 
   damage_state(state);
-}
-
-static void update_highlight(struct swaylock_state *state) {
-  // Advance a random amount between 1/4 and 3/4 of a full turn
-  state->highlight_start =
-      (state->highlight_start + (rand() % 1024) + 512) % 2048;
 }
 
 void swaylock_handle_key(struct swaylock_state *state, xkb_keysym_t keysym,
@@ -128,7 +119,6 @@ void swaylock_handle_key(struct swaylock_state *state, xkb_keysym_t keysym,
     } else {
       if (backspace(&state->password) && state->password.len != 0) {
         schedule_password_clear(state);
-        update_highlight(state);
       } else {
         cancel_password_clear(state);
       }
@@ -181,7 +171,6 @@ void swaylock_handle_key(struct swaylock_state *state, xkb_keysym_t keysym,
       append_ch(&state->password, codepoint);
       state->input_state = INPUT_STATE_DIRTY;
       schedule_password_clear(state);
-      update_highlight(state);
       damage_state(state);
     }
     break;
