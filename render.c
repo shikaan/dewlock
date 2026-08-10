@@ -137,15 +137,15 @@ static void draw_idle(cairo_t *c, struct swaylock_state *state, double h,
       .family = state->args.font.family,
   };
 
-  opts.size = 104;
+  opts.size = state->args.font.size * 6.5;
   opts.weight = CAIRO_FONT_WEIGHT_BOLD;
   draw_text(c, w, datey, opts, state->time, &extents);
 
-  opts.size = 32;
+  opts.size = state->args.font.size * 2;
   opts.weight = CAIRO_FONT_WEIGHT_NORMAL;
   draw_text(c, w, datey + extents.height, opts, state->date, &extents);
 
-  opts.size = 16;
+  opts.size = state->args.font.size;
   draw_text(c, w, helpy, opts, "Press any key to unlock", &extents);
 }
 
@@ -173,9 +173,10 @@ static inline void set_password(cairo_t *c, struct swaylock_state *state,
 
 static void draw_form(cairo_t *c, struct swaylock_state *state, double h,
                       double w) {
-  const double formy = h / 2 - 64; // FIXME: calculate form size and move up
-  const double inputw = 320;
-  const double inputpadx = 16;
+  const double formy =
+      h / 2 - state->args.font.size * 4; // FIXME: calculate form size and move up
+  const double inputw = state->args.font.size * 20;
+  const double inputpadx = state->args.font.size;
   cairo_text_extents_t extents;
 
   struct swaylock_text opts = {
@@ -183,19 +184,19 @@ static void draw_form(cairo_t *c, struct swaylock_state *state, double h,
       .family = state->args.font.family,
   };
 
-  opts.size = 24;
+  opts.size = state->args.font.size * 1.5;
   opts.weight = CAIRO_FONT_WEIGHT_NORMAL;
 
   static char pwd[128];
   set_password(c, state, opts, w, inputw - inputpadx * 2, pwd, sizeof(pwd));
 
-  opts.size = 36;
+  opts.size = state->args.font.size * 2.25;
   opts.weight = CAIRO_FONT_WEIGHT_BOLD;
   draw_text(c, w, formy, opts, state->username, &extents);
 
-  const double inputh = 48;
-  const double spacing = 24;
-  const double border = 4;
+  const double inputh = state->args.font.size * 3;
+  const double spacing = state->args.font.size * 1.5;
+  const double border = state->args.font.size * 0.25;
   const double inputx = w / 2 - inputw / 2;
   const double inputy = formy + extents.height + spacing;
 
@@ -213,20 +214,21 @@ static void draw_form(cairo_t *c, struct swaylock_state *state, double h,
   cairo_rectangle(c, inputx, inputy, inputw, inputh);
   cairo_fill(c);
 
-  opts.size = 24;
+  opts.size = state->args.font.size * 1.5;
   opts.weight = CAIRO_FONT_WEIGHT_NORMAL;
   opts.color = color;
-  draw_text(c, w, inputy + spacing + 8, opts, pwd, &extents);
+  draw_text(c, w, inputy + spacing + state->args.font.size * 0.5, opts, pwd,
+            &extents);
 
   if (state->auth_state == AUTH_STATE_IDLE && state->xkb.caps_lock) {
-    opts.size = 12;
+    opts.size = state->args.font.size * 0.75;
     opts.weight = CAIRO_FONT_WEIGHT_BOLD;
     opts.color = state->args.colors.warning;
     draw_text(c, w, inputy + inputh + spacing, opts, "CAPS LOCK IS ON",
               &extents);
   }
 
-  opts.size = 16;
+  opts.size = state->args.font.size;
   opts.weight = CAIRO_FONT_WEIGHT_NORMAL;
   opts.color = color;
 
