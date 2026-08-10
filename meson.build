@@ -93,6 +93,7 @@ sources = [
 	'clock.c',
 	'cairo.c',
 	'comm.c',
+	'configuration.c',
 	'log.c',
 	'loop.c',
 	'main.c',

@@ -116,4 +116,7 @@ void initialize_pw_backend(int argc, char **argv);
 void run_pw_backend_child(void);
 void clear_buffer(char *buf, size_t size);
 
+// Like strcmp, but treats NULL as distinct from (and less than) any string.
+int lenient_strcmp(char *a, char *b);
+
 #endif
