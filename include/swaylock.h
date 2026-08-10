@@ -17,23 +17,19 @@ enum auth_state {
 
 // Indicator state: status of the password input
 enum input_state {
-  INPUT_STATE_PRISTINE, // nothing happening; other states decay to this after
-                        // time
+  INPUT_STATE_PRISTINE, // nothing happening; other states decay to this
   INPUT_STATE_DIRTY,    // input was touched
-};
-
-// FIXME: this is unneeded
-struct swaylock_colors {
-  uint32_t background; // used when image is not specified
-  uint32_t overlay;
-  uint32_t text;
-  uint32_t warning;
-  uint32_t error;
 };
 
 // FIXME: this should divide runtime configuration from CLI options
 struct swaylock_args {
-  struct swaylock_colors colors;
+  struct {
+		uint32_t background; // used when image is not specified
+		uint32_t overlay;
+		uint32_t text;
+		uint32_t warning;
+		uint32_t error;
+	} colors;
   struct {
     char *path;
     enum background_mode mode;
@@ -55,8 +51,7 @@ struct swaylock_string {
 struct swaylock_state {
   struct loop *eventloop;
   struct loop_timer *input_idle_timer; // timer to reset input state to IDLE
-  struct loop_timer
-      *auth_idle_timer; // timer to stop displaying AUTH_STATE_INVALID
+  struct loop_timer *auth_idle_timer; // timer to stop displaying error
   struct loop_timer *clear_password_timer; // clears the password buffer
   struct loop_timer *clock_timer;
   struct wl_display *display;

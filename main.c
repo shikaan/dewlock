@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <poll.h>
+#include <pwd.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -434,10 +435,10 @@ static void load_image(struct swaylock_state *state) {
 static int parse_cli_args(int argc, char **argv, struct swaylock_state *state,
                           char **config_path) {
   static struct option long_options[] = {
-      {"config", required_argument, NULL, 'C'},
+      {"config", required_argument, NULL, 'c'},
       {"debug", no_argument, NULL, 'd'},
       {"daemonize", no_argument, NULL, 'f'},
-      {"ready-fd", required_argument, NULL, 'R'},
+      {"ready-fd", required_argument, NULL, 'r'},
       {"help", no_argument, NULL, 'h'},
       {"version", no_argument, NULL, 'v'},
       {0, 0, 0, 0}};
@@ -590,7 +591,7 @@ static int load_config(char *path, struct swaylock_state *state) {
       }
 
       if (!strcmp(key, CONFIG_FONT_SIZE)) {
-        state->args.background.mode = atoi(value);
+        state->args.font.size = atoi(value);
         continue;
       }
     }
@@ -702,7 +703,7 @@ int main(int argc, char **argv) {
   };
   wl_list_init(&state.images);
 
-  state.username = getlogin();
+  state.username = getpwuid(getuid())->pw_name;
 
   char *config_path = NULL;
   int result = parse_cli_args(argc, argv, NULL, &config_path);
