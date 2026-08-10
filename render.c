@@ -165,9 +165,7 @@ static inline void set_password(cairo_t *c, struct dewlock_state *state,
                    ? last_len
                    : min3u(state->password.len, maxlen, nchars - 1);
   last_len = len;
-  for (size_t i = 0; i < len; i++) {
-    chars[i] = '*';
-  }
+  memset(chars, '*', len);
   chars[len] = 0;
 }
 
