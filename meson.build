@@ -32,7 +32,6 @@ wayland_protos = dependency('wayland-protocols', version: '>=1.25', fallback: 'w
 wayland_scanner = dependency('wayland-scanner', version: '>=1.15.0', native: true)
 xkbcommon = dependency('xkbcommon')
 cairo = dependency('cairo')
-gdk_pixbuf = dependency('gdk-pixbuf-2.0', required: get_option('gdk-pixbuf'))
 libpam = cc.find_library('pam', required: get_option('pam'))
 crypt = cc.find_library('crypt', required: not libpam.found())
 math = cc.find_library('m')
@@ -78,13 +77,11 @@ endforeach
 conf_data = configuration_data()
 conf_data.set_quoted('SYSCONFDIR', get_option('prefix') / get_option('sysconfdir'))
 conf_data.set_quoted('SWAYLOCK_VERSION', version)
-conf_data.set10('HAVE_GDK_PIXBUF', gdk_pixbuf.found())
 
 subdir('include')
 
 dependencies = [
 	cairo,
-	gdk_pixbuf,
 	math,
 	rt,
 	xkbcommon,

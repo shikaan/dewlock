@@ -28,13 +28,11 @@ Install dependencies:
 * wayland-protocols \*
 * libxkbcommon
 * cairo
-* gdk-pixbuf2 \*\*
 * pam (optional)
 * [scdoc](https://git.sr.ht/~sircmpwn/scdoc) (optional: man pages) \*
 * git \*
 
-_\* Compile-time dep_  
-_\*\* Optional: required for background images other than PNG_
+_\* Compile-time dep_
 
 Run these commands:
 
