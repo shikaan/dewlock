@@ -4,9 +4,9 @@
 #include <stdio.h>
 #include <time.h>
 
-void schedule_clock_timer(struct swaylock_state *state);
+void schedule_clock_timer(struct dewlock_state *state);
 
-void state_set_time(struct swaylock_state *state) {
+void state_set_time(struct dewlock_state *state) {
   static char clock[8] = {};
   static char date[256] = {};
   static char month[32] = {};
@@ -23,13 +23,13 @@ void state_set_time(struct swaylock_state *state) {
 }
 
 static void set_time(void *data) {
-  struct swaylock_state *state = data;
+  struct dewlock_state *state = data;
   state_set_time(state);
   damage_state(state);
   schedule_clock_timer(state);
 }
 
-void schedule_clock_timer(struct swaylock_state *state) {
+void schedule_clock_timer(struct dewlock_state *state) {
   if (state->clock_timer) {
     loop_remove_timer(state->eventloop, state->clock_timer);
   }
@@ -37,7 +37,7 @@ void schedule_clock_timer(struct swaylock_state *state) {
   state->clock_timer = loop_add_timer(state->eventloop, 1000, set_time, state);
 }
 
-void cancel_clock_timer(struct swaylock_state *state) {
+void cancel_clock_timer(struct dewlock_state *state) {
   if (state->clock_timer) {
     loop_remove_timer(state->eventloop, state->clock_timer);
     state->clock_timer = NULL;

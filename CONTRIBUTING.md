@@ -31,10 +31,10 @@ Using `docker` or `podman` you can
 
 ```sh
 # build the development image
-podman build . -t swaylock-dev
+podman build . -t dewlock-dev
 
 # run the development container
-podman run --rm -it -v "$(pwd):/src:Z" --name swaylock swaylock-dev
+podman run --rm -it -v "$(pwd):/src:Z" --name dewlock dewlock-dev
 ```
 
 ## Using LSPs
@@ -45,7 +45,7 @@ You can get LSP (clangd) support from the running container like this
 # run the container as above
 
 # run the LSP 
-podman exec -i swaylock clangd \
+podman exec -i dewlock clangd \
     --background-index \
-    --path-mappings=<local-path-to-swaylock>/swaylock=/src"
+    --path-mappings=<local-path-to-dewlock>/dewlock=/src"
 ```

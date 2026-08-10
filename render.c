@@ -1,7 +1,7 @@
 #include "background-image.h"
 #include "cairo.h"
 #include "log.h"
-#include "swaylock.h"
+#include "dewlock.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,7 +9,7 @@
 
 static void surface_frame_handle_done(void *data, struct wl_callback *callback,
                                       uint32_t time) {
-  struct swaylock_surface *surface = data;
+  struct dewlock_surface *surface = data;
 
   wl_callback_destroy(callback);
   surface->frame = NULL;
@@ -21,10 +21,10 @@ static const struct wl_callback_listener surface_frame_listener = {
     .done = surface_frame_handle_done,
 };
 
-static bool render_frame(struct swaylock_surface *surface);
+static bool render_frame(struct dewlock_surface *surface);
 
-void render(struct swaylock_surface *surface) {
-  struct swaylock_state *state = surface->state;
+void render(struct dewlock_surface *surface) {
+  struct dewlock_state *state = surface->state;
 
   int buffer_width = surface->width * surface->scale;
   int buffer_height = surface->height * surface->scale;
@@ -45,7 +45,7 @@ void render(struct swaylock_surface *surface) {
     need_destroy = true;
     if (!create_buffer(state->shm, &buffer, buffer_width, buffer_height,
                        WL_SHM_FORMAT_ARGB8888)) {
-      swaylock_log(LOG_ERROR,
+      dewlock_log(LOG_ERROR,
                    "Failed to create new buffer for frame background.");
       return;
     }
@@ -90,7 +90,7 @@ void render(struct swaylock_surface *surface) {
   }
 }
 
-struct swaylock_text {
+struct dewlock_text {
   uint32_t color;
   double size;
   char *family;
@@ -98,7 +98,7 @@ struct swaylock_text {
 };
 
 static void init_text(cairo_t *cairo, double width, double y,
-                      struct swaylock_text opts, const char *text,
+                      struct dewlock_text opts, const char *text,
                       cairo_text_extents_t *extents) {
   assert(extents && "extents must be non-null");
 
@@ -119,20 +119,20 @@ static void init_text(cairo_t *cairo, double width, double y,
 }
 
 static void draw_text(cairo_t *cairo, double width, double y,
-                      struct swaylock_text opts, const char *text,
+                      struct dewlock_text opts, const char *text,
                       cairo_text_extents_t *extents) {
   init_text(cairo, width, y, opts, text, extents);
   cairo_move_to(cairo, width / 2 - extents->width / 2, y);
   cairo_show_text(cairo, text);
 }
 
-static void draw_idle(cairo_t *c, struct swaylock_state *state, double h,
+static void draw_idle(cairo_t *c, struct dewlock_state *state, double h,
                       double w) {
   const double datey = h / 6;
   const double helpy = h * 5 / 6;
   cairo_text_extents_t extents;
 
-  struct swaylock_text opts = {
+  struct dewlock_text opts = {
       .color = state->args.colors.text,
       .family = state->args.font.family,
   };
@@ -153,8 +153,8 @@ static inline size_t min3u(size_t a, size_t b, size_t c) {
   return a < b ? (a < c ? a : c) : (b < c ? b : c);
 }
 
-static inline void set_password(cairo_t *c, struct swaylock_state *state,
-                                struct swaylock_text opts, double w,
+static inline void set_password(cairo_t *c, struct dewlock_state *state,
+                                struct dewlock_text opts, double w,
                                 double maxw, char *chars, size_t nchars) {
   static size_t last_len;
   cairo_text_extents_t glyph_extents;
@@ -171,7 +171,7 @@ static inline void set_password(cairo_t *c, struct swaylock_state *state,
   chars[len] = 0;
 }
 
-static void draw_form(cairo_t *c, struct swaylock_state *state, double h,
+static void draw_form(cairo_t *c, struct dewlock_state *state, double h,
                       double w) {
   const double formy =
       h / 2 - state->args.font.size * 4; // FIXME: calculate form size and move up
@@ -179,7 +179,7 @@ static void draw_form(cairo_t *c, struct swaylock_state *state, double h,
   const double inputpadx = state->args.font.size;
   cairo_text_extents_t extents;
 
-  struct swaylock_text opts = {
+  struct dewlock_text opts = {
       .color = state->args.colors.text,
       .family = state->args.font.family,
   };
@@ -244,8 +244,8 @@ static void draw_form(cairo_t *c, struct swaylock_state *state, double h,
   draw_text(c, w, inputy + inputh + spacing * 3, opts, msg, &extents);
 }
 
-static bool render_frame(struct swaylock_surface *surface) {
-  struct swaylock_state *state = surface->state;
+static bool render_frame(struct dewlock_surface *surface) {
+  struct dewlock_state *state = surface->state;
 
   // Compute the size of the buffer needed
   int buffer_width = surface->width;
@@ -261,7 +261,7 @@ static bool render_frame(struct swaylock_surface *surface) {
   struct pool_buffer *buffer = get_next_buffer(
       state->shm, surface->indicator_buffers, buffer_width, buffer_height);
   if (buffer == NULL) {
-    swaylock_log(LOG_ERROR, "No buffer");
+    dewlock_log(LOG_ERROR, "No buffer");
     return false;
   }
 

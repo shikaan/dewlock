@@ -1,12 +1,12 @@
-swaylock(1)
+dewlock(1)
 
 # NAME
 
-swaylock - Screen locker for Wayland
+dewlock - Screen locker for Wayland
 
 # SYNOPSIS
 
-_swaylock_ [options...]
+_dewlock_ [options...]
 
 Locks your Wayland session.
 
@@ -14,8 +14,8 @@ Locks your Wayland session.
 
 *-c, --config* <path>
 	The config file to use. By default, the following paths are checked:
-	_$HOME/.swaylock/config_, _$XDG\_CONFIG\_HOME/swaylock/config_, and
-	_SYSCONFDIR/swaylock/config_. See *CONFIGURATION* for details.
+	_$HOME/.dewlock/config_, _$XDG\_CONFIG\_HOME/dewlock/config_, and
+	_SYSCONFDIR/dewlock/config_. See *CONFIGURATION* for details.
 
 *-d, --debug*
 	Enable debugging output.
@@ -105,5 +105,5 @@ set.
 # AUTHORS
 
 Maintained by Drew DeVault <sir@cmpwn.com>, who is assisted by other open
-source contributors. For more information about swaylock development, see
+source contributors. For more information about dewlock development, see
 https://github.com/swaywm/swaylock.

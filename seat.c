@@ -4,14 +4,14 @@
 #include <unistd.h>
 #include <xkbcommon/xkbcommon.h>
 #include "log.h"
-#include "swaylock.h"
+#include "dewlock.h"
 #include "seat.h"
 #include "loop.h"
 
 static void keyboard_keymap(void *data, struct wl_keyboard *wl_keyboard,
 		uint32_t format, int32_t fd, uint32_t size) {
-	struct swaylock_seat *seat = data;
-	struct swaylock_state *state = seat->state;
+	struct dewlock_seat *seat = data;
+	struct dewlock_state *state = seat->state;
 
 	struct xkb_keymap *keymap = NULL;
 	struct xkb_state *xkb_state = NULL;
@@ -23,7 +23,7 @@ static void keyboard_keymap(void *data, struct wl_keyboard *wl_keyboard,
 		char *map_shm = mmap(NULL, size - 1, PROT_READ, MAP_PRIVATE, fd, 0);
 		if (map_shm == MAP_FAILED) {
 			close(fd);
-			swaylock_log(LOG_ERROR, "Unable to initialize keymap shm, aborting");
+			dewlock_log(LOG_ERROR, "Unable to initialize keymap shm, aborting");
 			exit(1);
 		}
 		keymap = xkb_keymap_new_from_buffer(
@@ -45,7 +45,7 @@ static void keyboard_keymap(void *data, struct wl_keyboard *wl_keyboard,
 	state->xkb.state = xkb_state;
 }
 
-static void stop_repeat(struct swaylock_seat *seat) {
+static void stop_repeat(struct dewlock_seat *seat) {
 	if (seat->repeat_timer) {
 		loop_remove_timer(seat->state->eventloop, seat->repeat_timer);
 		seat->repeat_timer = NULL;
@@ -63,22 +63,22 @@ static void keyboard_leave(void *data, struct wl_keyboard *wl_keyboard,
 	// suspend/DPMS transition) the protocol guarantees no release events for
 	// currently-held keys, so an armed key-repeat would otherwise linger and
 	// fire on resume, injecting a phantom character into the password buffer.
-	struct swaylock_seat *seat = data;
+	struct dewlock_seat *seat = data;
 	stop_repeat(seat);
 }
 
 static void keyboard_repeat(void *data) {
-	struct swaylock_seat *seat = data;
-	struct swaylock_state *state = seat->state;
+	struct dewlock_seat *seat = data;
+	struct dewlock_state *state = seat->state;
 	seat->repeat_timer = loop_add_timer(
 		state->eventloop, seat->repeat_period_ms, keyboard_repeat, seat);
-	swaylock_handle_key(state, seat->repeat_sym, seat->repeat_codepoint);
+	dewlock_handle_key(state, seat->repeat_sym, seat->repeat_codepoint);
 }
 
 static void keyboard_key(void *data, struct wl_keyboard *wl_keyboard,
 		uint32_t serial, uint32_t time, uint32_t key, uint32_t _key_state) {
-	struct swaylock_seat *seat = data;
-	struct swaylock_state *state = seat->state;
+	struct dewlock_seat *seat = data;
+	struct dewlock_state *state = seat->state;
 	if (state->xkb.state == NULL) {
 		return;
 	}
@@ -89,7 +89,7 @@ static void keyboard_key(void *data, struct wl_keyboard *wl_keyboard,
 		key + 8 : 0;
 	uint32_t codepoint = xkb_state_key_get_utf32(state->xkb.state, keycode);
 	if (key_state == WL_KEYBOARD_KEY_STATE_PRESSED) {
-		swaylock_handle_key(state, sym, codepoint);
+		dewlock_handle_key(state, sym, codepoint);
 	}
 
 	stop_repeat(seat);
@@ -105,8 +105,8 @@ static void keyboard_key(void *data, struct wl_keyboard *wl_keyboard,
 static void keyboard_modifiers(void *data, struct wl_keyboard *wl_keyboard,
 		uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched,
 		uint32_t mods_locked, uint32_t group) {
-	struct swaylock_seat *seat = data;
-	struct swaylock_state *state = seat->state;
+	struct dewlock_seat *seat = data;
+	struct dewlock_state *state = seat->state;
 	if (state->xkb.state == NULL) {
 		return;
 	}
@@ -128,7 +128,7 @@ static void keyboard_modifiers(void *data, struct wl_keyboard *wl_keyboard,
 
 static void keyboard_repeat_info(void *data, struct wl_keyboard *wl_keyboard,
 		int32_t rate, int32_t delay) {
-	struct swaylock_seat *seat = data;
+	struct dewlock_seat *seat = data;
 	if (rate <= 0) {
 		seat->repeat_period_ms = -1;
 	} else {
@@ -206,7 +206,7 @@ static const struct wl_pointer_listener pointer_listener = {
 
 static void seat_handle_capabilities(void *data, struct wl_seat *wl_seat,
 		enum wl_seat_capability caps) {
-	struct swaylock_seat *seat = data;
+	struct dewlock_seat *seat = data;
 	if (seat->pointer) {
 		wl_pointer_release(seat->pointer);
 		seat->pointer = NULL;

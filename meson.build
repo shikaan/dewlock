@@ -1,5 +1,5 @@
 project(
-	'swaylock',
+	'dewlock',
 	'c',
 	version: '1.8.6',
 	license: 'MIT',
@@ -76,7 +76,7 @@ endforeach
 
 conf_data = configuration_data()
 conf_data.set_quoted('SYSCONFDIR', get_option('prefix') / get_option('sysconfdir'))
-conf_data.set_quoted('SWAYLOCK_VERSION', version)
+conf_data.set_quoted('DEWLOCK_VERSION', version)
 
 subdir('include')
 
@@ -108,25 +108,25 @@ if libpam.found()
 	sources += ['pam.c']
 	dependencies += [libpam]
 else
-	warning('The swaylock binary often needs to be setuid when compiled without libpam')
-	warning('You must do this manually post-install: chmod a+s /path/to/swaylock')
+	warning('The dewlock binary often needs to be setuid when compiled without libpam')
+	warning('You must do this manually post-install: chmod a+s /path/to/dewlock')
 	warning('See the "Without PAM" section of the README for details.')
 	sources += ['shadow.c']
 	dependencies += [crypt]
 endif
 
-swaylock_inc = include_directories('include')
+dewlock_inc = include_directories('include')
 
-executable('swaylock',
+executable('dewlock',
 	sources + protos_src,
-	include_directories: [swaylock_inc],
+	include_directories: [dewlock_inc],
 	dependencies: dependencies,
 	install: true
 )
 
 if libpam.found()
 	install_data(
-		'pam/swaylock',
+		'pam/dewlock',
 		install_dir: get_option('sysconfdir') / 'pam.d'
 	)
 endif
@@ -134,7 +134,7 @@ endif
 if scdoc.found()
 	mandir = get_option('mandir')
 	man_files = [
-		'swaylock.1.scd',
+		'dewlock.1.scd',
 	]
 	foreach filename : man_files
 		topic = filename.split('.')[-3].split('/')[-1]

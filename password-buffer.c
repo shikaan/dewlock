@@ -1,6 +1,6 @@
 #include "password-buffer.h"
 #include "log.h"
-#include "swaylock.h"
+#include "dewlock.h"
 #include <stdlib.h>
 #include <errno.h>
 #include <unistd.h>
@@ -25,16 +25,16 @@ static bool password_buffer_lock(char *addr, size_t size) {
 		case EAGAIN:
 			retries--;
 			if (retries == 0) {
-				swaylock_log(LOG_ERROR, "mlock() supported but failed too often.");
+				dewlock_log(LOG_ERROR, "mlock() supported but failed too often.");
 				return false;
 			}
 			break;
 		case EPERM:
-			swaylock_log_errno(LOG_ERROR, "Unable to mlock() password memory: Unsupported!");
+			dewlock_log_errno(LOG_ERROR, "Unable to mlock() password memory: Unsupported!");
 			mlock_supported = false;
 			return true;
 		default:
-			swaylock_log_errno(LOG_ERROR, "Unable to mlock() password memory.");
+			dewlock_log_errno(LOG_ERROR, "Unable to mlock() password memory.");
 			return false;
 		}
 	}
@@ -46,7 +46,7 @@ static bool password_buffer_lock(char *addr, size_t size) {
 static bool password_buffer_unlock(char *addr, size_t size) {
 	if (mlock_supported) {
 		if (munlock(addr, size) != 0) {
-			swaylock_log_errno(LOG_ERROR, "Unable to munlock() password memory.");
+			dewlock_log_errno(LOG_ERROR, "Unable to munlock() password memory.");
 			return false;
 		}
 	}
@@ -60,7 +60,7 @@ char *password_buffer_create(size_t size) {
 	if (result) {
 		//posix_memalign doesn't set errno according to the man page
 		errno = result;
-		swaylock_log_errno(LOG_ERROR, "failed to alloc password buffer");
+		dewlock_log_errno(LOG_ERROR, "failed to alloc password buffer");
 		return NULL;
 	}
 

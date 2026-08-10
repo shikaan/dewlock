@@ -16,13 +16,13 @@ static const char *verbosity_colors[] = {
 	[LOG_DEBUG ] = "\x1B[1;90m",
 };
 
-void swaylock_log_init(enum log_importance verbosity) {
+void dewlock_log_init(enum log_importance verbosity) {
 	if (verbosity < LOG_IMPORTANCE_LAST) {
 		log_importance = verbosity;
 	}
 }
 
-void _swaylock_log(enum log_importance verbosity, const char *fmt, ...) {
+void _dewlock_log(enum log_importance verbosity, const char *fmt, ...) {
 	if (verbosity > log_importance) {
 		return;
 	}
@@ -57,7 +57,7 @@ void _swaylock_log(enum log_importance verbosity, const char *fmt, ...) {
 	va_end(args);
 }
 
-const char *_swaylock_strip_path(const char *filepath) {
+const char *_dewlock_strip_path(const char *filepath) {
 	if (*filepath == '.') {
 		while (*filepath == '.' || *filepath == '/') {
 			++filepath;

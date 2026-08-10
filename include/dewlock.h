@@ -1,5 +1,5 @@
-#ifndef _SWAYLOCK_H
-#define _SWAYLOCK_H
+#ifndef _DEWLOCK_H
+#define _DEWLOCK_H
 #include "background-image.h"
 #include "cairo.h"
 #include "pool-buffer.h"
@@ -22,7 +22,7 @@ enum input_state {
 };
 
 // FIXME: this should divide runtime configuration from CLI options
-struct swaylock_args {
+struct dewlock_args {
   struct {
 		uint32_t background; // used when image is not specified
 		uint32_t overlay;
@@ -42,13 +42,13 @@ struct swaylock_args {
   int ready_fd;
 };
 
-struct swaylock_string {
+struct dewlock_string {
   size_t len;
   size_t cap;
   char *buf;
 };
 
-struct swaylock_state {
+struct dewlock_state {
   struct loop *eventloop;
   struct loop_timer *input_idle_timer; // timer to reset input state to IDLE
   struct loop_timer *auth_idle_timer; // timer to stop displaying error
@@ -60,12 +60,12 @@ struct swaylock_state {
   struct wl_shm *shm;
   struct wl_list surfaces;
   struct wl_list images;
-  struct swaylock_args args;
-  struct swaylock_string password;
+  struct dewlock_args args;
+  struct dewlock_string password;
   char* username;
   char* time;
   char* date;
-  struct swaylock_xkb xkb;
+  struct dewlock_xkb xkb;
   enum auth_state auth_state;   // state of the authentication attempt
   enum input_state input_state; // state of the password buffer and key inputs
   int failed_attempts;
@@ -74,9 +74,9 @@ struct swaylock_state {
   struct ext_session_lock_v1 *ext_session_lock_v1;
 };
 
-struct swaylock_surface {
+struct dewlock_surface {
   cairo_surface_t *image;
-  struct swaylock_state *state;
+  struct dewlock_state *state;
   struct wl_output *output;
   uint32_t output_global_name;
   struct wl_surface *surface; // surface for background
@@ -96,21 +96,21 @@ struct swaylock_surface {
   int last_buffer_width, last_buffer_height;
 };
 
-// There is exactly one swaylock_image for each -i argument
-struct swaylock_image {
+// There is exactly one dewlock_image for each -i argument
+struct dewlock_image {
   char *path;
   char *output_name;
   cairo_surface_t *cairo_surface;
   struct wl_list link;
 };
 
-void swaylock_handle_key(struct swaylock_state *state, xkb_keysym_t keysym,
+void dewlock_handle_key(struct dewlock_state *state, xkb_keysym_t keysym,
                          uint32_t codepoint);
 
-void render(struct swaylock_surface *surface);
-void damage_state(struct swaylock_state *state);
-void clear_password_buffer(struct swaylock_string *pw);
-void schedule_auth_idle(struct swaylock_state *state);
+void render(struct dewlock_surface *surface);
+void damage_state(struct dewlock_state *state);
+void clear_password_buffer(struct dewlock_string *pw);
+void schedule_auth_idle(struct dewlock_state *state);
 
 void initialize_pw_backend(int argc, char **argv);
 void run_pw_backend_child(void);

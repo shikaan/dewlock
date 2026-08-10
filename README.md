@@ -1,10 +1,10 @@
-<h1 align="center">swaylock</h1>
+<h1 align="center">dewlock</h1>
 
 <p align="center">
 A minimal, beautiful screen locker for Wayland.
 </p>
 
-swaylock is a fork of [swaywm/swaylock](https://github.com/swaywm/swaylock)
+dewlock is a fork of [swaywm/swaylock](https://github.com/swaywm/swaylock)
 focused on providing a minimalist, beautiful experience.
 
 Like its predecessor is compatible with any Wayland compositor implementing 
@@ -24,41 +24,41 @@ build from source.
 ### Usage
 
 ```sh
-swaylock
+dewlock
 ```
 
 Configuration lives in a single `namespace.key=value` file (by default
-`$XDG_CONFIG_HOME/swaylock/config`). See [swaylock(1)](swaylock.1.scd) for
+`$XDG_CONFIG_HOME/dewlock/config`). See [dewlock(1)](dewlock.1.scd) for
 every option and configuration key.
 
 ##### Without PAM
 
-On systems without PAM, swaylock uses `shadow.h`.
+On systems without PAM, dewlock uses `shadow.h`.
 
 Systems which rely on a tcb-like setup (either via musl's native support or via
 glibc+[tcb](https://www.openwall.com/tcb/)), require no further action.
 
 For most other systems, where passwords for all users are stored in `/etc/shadow`,
-swaylock needs to be installed suid:
+dewlock needs to be installed suid:
 
 ```sh
-sudo chmod a+s /usr/local/bin/swaylock
+sudo chmod a+s /usr/local/bin/dewlock
 ```
 
 Optionally, on systems where the file `/etc/shadow` is owned by the `shadow`
 group, the binary can be made sgid instead:
 
 ```sh
-sudo chgrp shadow /usr/local/bin/swaylock
-sudo chmod g+s /usr/local/bin/swaylock
+sudo chgrp shadow /usr/local/bin/dewlock
+sudo chmod g+s /usr/local/bin/dewlock
 ```
 
-Swaylock will drop root permissions shortly after startup.
+Dewlock will drop root permissions shortly after startup.
 
 ## Contributing
 
 If you'd like to request a feature or report a bug, please create a 
-[GitHub Issue](https://github.com/shikaan/swaylock/issues).
+[GitHub Issue](https://github.com/shikaan/dewlock/issues).
 
 ## License
 

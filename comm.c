@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include "comm.h"
 #include "log.h"
-#include "swaylock.h"
+#include "dewlock.h"
 #include "password-buffer.h"
 
 static int comm[2][2] = {{-1, -1}, {-1, -1}};
@@ -20,13 +20,13 @@ static ssize_t read_full(int fd, void *dst, size_t size) {
 			if (errno == EINTR) {
 				continue;
 			}
-			swaylock_log_errno(LOG_ERROR, "read() failed");
+			dewlock_log_errno(LOG_ERROR, "read() failed");
 			return -1;
 		} else if (n == 0) {
 			if (offset == 0) {
 				return 0;
 			}
-			swaylock_log(LOG_ERROR, "read() failed: unexpected EOF");
+			dewlock_log(LOG_ERROR, "read() failed: unexpected EOF");
 			return -1;
 		}
 		offset += n;
@@ -44,7 +44,7 @@ static bool write_full(int fd, const void *src, size_t size) {
 			if (errno == EINTR) {
 				continue;
 			}
-			swaylock_log_errno(LOG_ERROR, "write() failed");
+			dewlock_log_errno(LOG_ERROR, "write() failed");
 			return false;
 		}
 		offset += n;
@@ -62,7 +62,7 @@ ssize_t read_comm_request(char **buf_ptr) {
 	}
 	assert(size > 0);
 
-	swaylock_log(LOG_DEBUG, "received pw check request");
+	dewlock_log(LOG_DEBUG, "received pw check request");
 
 	char *buf = password_buffer_create(size);
 	if (!buf) {
@@ -70,7 +70,7 @@ ssize_t read_comm_request(char **buf_ptr) {
 	}
 
 	if (read_full(fd, buf, size) <= 0) {
-		swaylock_log_errno(LOG_ERROR, "failed to read pw");
+		dewlock_log_errno(LOG_ERROR, "failed to read pw");
 		return -1;
 	}
 
@@ -85,16 +85,16 @@ bool write_comm_reply(bool success) {
 
 bool spawn_comm_child(void) {
 	if (pipe(comm[0]) != 0) {
-		swaylock_log_errno(LOG_ERROR, "failed to create pipe");
+		dewlock_log_errno(LOG_ERROR, "failed to create pipe");
 		return false;
 	}
 	if (pipe(comm[1]) != 0) {
-		swaylock_log_errno(LOG_ERROR, "failed to create pipe");
+		dewlock_log_errno(LOG_ERROR, "failed to create pipe");
 		return false;
 	}
 	pid_t child = fork();
 	if (child < 0) {
-		swaylock_log_errno(LOG_ERROR, "failed to fork");
+		dewlock_log_errno(LOG_ERROR, "failed to fork");
 		return false;
 	} else if (child == 0) {
 		struct sigaction sa = {
@@ -110,18 +110,18 @@ bool spawn_comm_child(void) {
 	return true;
 }
 
-bool write_comm_request(struct swaylock_string *pw) {
+bool write_comm_request(struct dewlock_string *pw) {
 	bool result = false;
 	int fd = comm[0][1];
 
 	size_t size = pw->len + 1;
 	if (!write_full(fd, &size, sizeof(size))) {
-		swaylock_log_errno(LOG_ERROR, "Failed to write pw size");
+		dewlock_log_errno(LOG_ERROR, "Failed to write pw size");
 		goto out;
 	}
 
 	if (!write_full(fd, pw->buf, size)) {
-		swaylock_log_errno(LOG_ERROR, "Failed to write pw buffer");
+		dewlock_log_errno(LOG_ERROR, "Failed to write pw buffer");
 		goto out;
 	}
 
@@ -134,7 +134,7 @@ out:
 
 bool read_comm_reply(bool *auth_success) {
 	if (read_full(comm[1][0], auth_success, sizeof(*auth_success)) <= 0) {
-		swaylock_log(LOG_ERROR, "Failed to read pw result");
+		dewlock_log(LOG_ERROR, "Failed to read pw result");
 		return false;
 	}
 	return true;

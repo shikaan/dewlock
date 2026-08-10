@@ -17,18 +17,18 @@ enum background_mode parse_background_mode(const char *mode) {
 	} else if (strcmp(mode, "solid_color") == 0) {
 		return BACKGROUND_MODE_SOLID_COLOR;
 	}
-	swaylock_log(LOG_ERROR, "Unsupported background mode: %s", mode);
+	dewlock_log(LOG_ERROR, "Unsupported background mode: %s", mode);
 	return BACKGROUND_MODE_INVALID;
 }
 
 cairo_surface_t *load_background_image(const char *path) {
 	cairo_surface_t *image = cairo_image_surface_create_from_png(path);
 	if (!image) {
-		swaylock_log(LOG_ERROR, "Failed to read background image.");
+		dewlock_log(LOG_ERROR, "Failed to read background image.");
 		return NULL;
 	}
 	if (cairo_surface_status(image) != CAIRO_STATUS_SUCCESS) {
-		swaylock_log(LOG_ERROR, "Failed to read background image: %s.",
+		dewlock_log(LOG_ERROR, "Failed to read background image: %s.",
 				cairo_status_to_string(cairo_surface_status(image)));
 		return NULL;
 	}

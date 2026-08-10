@@ -8,12 +8,12 @@
 #include "comm.h"
 #include "log.h"
 #include "password-buffer.h"
-#include "swaylock.h"
+#include "dewlock.h"
 
 void initialize_pw_backend(int argc, char **argv) {
 	if (getuid() != geteuid() || getgid() != getegid()) {
-		swaylock_log(LOG_ERROR,
-			"swaylock is setuid, but was compiled with the PAM"
+		dewlock_log(LOG_ERROR,
+			"dewlock is setuid, but was compiled with the PAM"
 			" backend. Run 'chmod a-s %s' to fix. Aborting.", argv[0]);
 		exit(EXIT_FAILURE);
 	}
@@ -34,7 +34,7 @@ static int handle_conversation(int num_msg, const struct pam_message **msg,
 	struct pam_response *pam_reply =
 		calloc(num_msg, sizeof(struct pam_response));
 	if (pam_reply == NULL) {
-		swaylock_log(LOG_ERROR, "Allocation failed");
+		dewlock_log(LOG_ERROR, "Allocation failed");
 		return PAM_ABORT;
 	}
 	*resp = pam_reply;
@@ -50,7 +50,7 @@ static int handle_conversation(int num_msg, const struct pam_message **msg,
 			}
 			pam_reply[i].resp = strdup(state->password); // PAM clears and frees this
 			if (pam_reply[i].resp == NULL) {
-				swaylock_log(LOG_ERROR, "Allocation failed");
+				dewlock_log(LOG_ERROR, "Allocation failed");
 				return PAM_ABORT;
 			}
 			state->password = NULL;
@@ -68,7 +68,7 @@ static const char *get_pam_auth_error(int pam_status) {
 	case PAM_AUTH_ERR:
 		return "invalid credentials";
 	case PAM_CRED_INSUFFICIENT:
-		return "swaylock cannot authenticate users; check /etc/pam.d/swaylock "
+		return "dewlock cannot authenticate users; check /etc/pam.d/dewlock "
 			"has been installed properly";
 	case PAM_AUTHINFO_UNAVAIL:
 		return "authentication information unavailable";
@@ -85,7 +85,7 @@ void run_pw_backend_child(void) {
 	char *pw_buf = NULL;
 	struct passwd *passwd = getpwuid(getuid());
 	if (!passwd) {
-		swaylock_log_errno(LOG_ERROR, "getpwuid failed");
+		dewlock_log_errno(LOG_ERROR, "getpwuid failed");
 		exit(EXIT_FAILURE);
 	}
 
@@ -97,13 +97,13 @@ void run_pw_backend_child(void) {
 		.appdata_ptr = &state,
 	};
 	pam_handle_t *auth_handle = NULL;
-	if (pam_start("swaylock", username, &conv, &auth_handle) != PAM_SUCCESS) {
-		swaylock_log(LOG_ERROR, "pam_start failed");
+	if (pam_start("dewlock", username, &conv, &auth_handle) != PAM_SUCCESS) {
+		dewlock_log(LOG_ERROR, "pam_start failed");
 		exit(EXIT_FAILURE);
 	}
 
 	/* This code does not run as root */
-	swaylock_log(LOG_DEBUG, "Prepared to authorize user %s", username);
+	dewlock_log(LOG_DEBUG, "Prepared to authorize user %s", username);
 
 	int pam_status = PAM_SUCCESS;
 	while (1) {
@@ -122,7 +122,7 @@ void run_pw_backend_child(void) {
 
 		bool success = pam_status == PAM_SUCCESS;
 		if (!success) {
-			swaylock_log(LOG_ERROR, "pam_authenticate failed: %s",
+			dewlock_log(LOG_ERROR, "pam_authenticate failed: %s",
 				get_pam_auth_error(pam_status));
 		}
 
@@ -140,7 +140,7 @@ void run_pw_backend_child(void) {
 	pam_setcred(auth_handle, PAM_REFRESH_CRED);
 
 	if (pam_end(auth_handle, pam_status) != PAM_SUCCESS) {
-		swaylock_log(LOG_ERROR, "pam_end failed");
+		dewlock_log(LOG_ERROR, "pam_end failed");
 		exit(EXIT_FAILURE);
 	}
 

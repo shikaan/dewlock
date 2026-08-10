@@ -8,7 +8,7 @@
 #include "password-buffer.h"
 #include "pool-buffer.h"
 #include "seat.h"
-#include "swaylock.h"
+#include "dewlock.h"
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -48,7 +48,7 @@
 
 // This intentionally leaks memory (in the asan sense).
 // Its life is bound the the applications, no point in freeing it.
-static struct swaylock_state state;
+static struct dewlock_state state;
 
 static const struct ext_session_lock_surface_v1_listener
     ext_session_lock_surface_v1_listener;
@@ -60,7 +60,7 @@ static uint32_t parse_color(const char *color) {
 
   int len = strlen(color);
   if (len != 6 && len != 8) {
-    swaylock_log(LOG_DEBUG, "Invalid color %s, defaulting to white", color);
+    dewlock_log(LOG_DEBUG, "Invalid color %s, defaulting to white", color);
     return 0xFFFFFFFF;
   }
   uint32_t res = (uint32_t)strtoul(color, NULL, 16);
@@ -85,7 +85,7 @@ int lenient_strcmp(char *a, char *b) {
 static void daemonize(void) {
   int fds[2];
   if (pipe(fds) != 0) {
-    swaylock_log(LOG_ERROR, "Failed to pipe");
+    dewlock_log(LOG_ERROR, "Failed to pipe");
     exit(1);
   }
   if (fork() == 0) {
@@ -109,7 +109,7 @@ static void daemonize(void) {
     close(fds[1]);
     uint8_t success;
     if (read(fds[0], &success, 1) != 1 || !success) {
-      swaylock_log(LOG_ERROR, "Failed to daemonize");
+      dewlock_log(LOG_ERROR, "Failed to daemonize");
       exit(1);
     }
     close(fds[0]);
@@ -117,7 +117,7 @@ static void daemonize(void) {
   }
 }
 
-static void destroy_surface(struct swaylock_surface *surface) {
+static void destroy_surface(struct dewlock_surface *surface) {
   if (surface->frame != NULL) {
     wl_callback_destroy(surface->frame);
   }
@@ -140,18 +140,18 @@ static void destroy_surface(struct swaylock_surface *surface) {
   free(surface);
 }
 
-static cairo_surface_t *select_image(struct swaylock_state *state,
-                                     struct swaylock_surface *surface);
+static cairo_surface_t *select_image(struct dewlock_state *state,
+                                     struct dewlock_surface *surface);
 
-static bool surface_is_opaque(struct swaylock_surface *surface) {
+static bool surface_is_opaque(struct dewlock_surface *surface) {
   if (surface->image) {
     return cairo_surface_get_content(surface->image) == CAIRO_CONTENT_COLOR;
   }
   return (surface->state->args.colors.background & 0xff) == 0xff;
 }
 
-static void create_surface(struct swaylock_surface *surface) {
-  struct swaylock_state *state = surface->state;
+static void create_surface(struct dewlock_surface *surface) {
+  struct dewlock_state *state = surface->state;
 
   surface->image = select_image(state, surface);
 
@@ -187,7 +187,7 @@ static void create_surface(struct swaylock_surface *surface) {
 static void ext_session_lock_surface_v1_handle_configure(
     void *data, struct ext_session_lock_surface_v1 *lock_surface,
     uint32_t serial, uint32_t width, uint32_t height) {
-  struct swaylock_surface *surface = data;
+  struct dewlock_surface *surface = data;
   surface->width = width;
   surface->height = height;
   ext_session_lock_surface_v1_ack_configure(lock_surface, serial);
@@ -200,8 +200,8 @@ static const struct ext_session_lock_surface_v1_listener
         .configure = ext_session_lock_surface_v1_handle_configure,
 };
 
-void damage_state(struct swaylock_state *state) {
-  struct swaylock_surface *surface;
+void damage_state(struct dewlock_state *state) {
+  struct dewlock_surface *surface;
   wl_list_for_each(surface, &state->surfaces, link) {
     surface->dirty = true;
     render(surface);
@@ -213,7 +213,7 @@ static void handle_wl_output_geometry(void *data, struct wl_output *wl_output,
                                       int32_t height_mm, int32_t subpixel,
                                       const char *make, const char *model,
                                       int32_t transform) {
-  struct swaylock_surface *surface = data;
+  struct dewlock_surface *surface = data;
   surface->subpixel = subpixel;
   if (surface->state->run_display) {
     surface->dirty = true;
@@ -228,7 +228,7 @@ static void handle_wl_output_mode(void *data, struct wl_output *output,
 }
 
 static void handle_wl_output_done(void *data, struct wl_output *output) {
-  struct swaylock_surface *surface = data;
+  struct dewlock_surface *surface = data;
   if (!surface->created && surface->state->run_display) {
     create_surface(surface);
   }
@@ -236,7 +236,7 @@ static void handle_wl_output_done(void *data, struct wl_output *output) {
 
 static void handle_wl_output_scale(void *data, struct wl_output *output,
                                    int32_t factor) {
-  struct swaylock_surface *surface = data;
+  struct dewlock_surface *surface = data;
   surface->scale = factor;
   if (surface->state->run_display) {
     surface->dirty = true;
@@ -246,7 +246,7 @@ static void handle_wl_output_scale(void *data, struct wl_output *output,
 
 static void handle_wl_output_name(void *data, struct wl_output *output,
                                   const char *name) {
-  struct swaylock_surface *surface = data;
+  struct dewlock_surface *surface = data;
   surface->output_name = strdup(name);
 }
 
@@ -267,14 +267,14 @@ struct wl_output_listener _wl_output_listener = {
 static void
 ext_session_lock_v1_handle_locked(void *data,
                                   struct ext_session_lock_v1 *lock) {
-  struct swaylock_state *state = data;
+  struct dewlock_state *state = data;
   state->locked = true;
 }
 
 static void
 ext_session_lock_v1_handle_finished(void *data,
                                     struct ext_session_lock_v1 *lock) {
-  swaylock_log(LOG_ERROR, "Failed to lock session -- "
+  dewlock_log(LOG_ERROR, "Failed to lock session -- "
                           "is another lockscreen running?");
   exit(2);
 }
@@ -288,7 +288,7 @@ static const struct ext_session_lock_v1_listener ext_session_lock_v1_listener =
 static void handle_global(void *data, struct wl_registry *registry,
                           uint32_t name, const char *interface,
                           uint32_t version) {
-  struct swaylock_state *state = data;
+  struct dewlock_state *state = data;
   if (strcmp(interface, wl_compositor_interface.name) == 0) {
     state->compositor =
         wl_registry_bind(registry, name, &wl_compositor_interface, 4);
@@ -300,13 +300,13 @@ static void handle_global(void *data, struct wl_registry *registry,
   } else if (strcmp(interface, wl_seat_interface.name) == 0) {
     struct wl_seat *seat =
         wl_registry_bind(registry, name, &wl_seat_interface, 4);
-    struct swaylock_seat *swaylock_seat =
-        calloc(1, sizeof(struct swaylock_seat));
-    swaylock_seat->state = state;
-    wl_seat_add_listener(seat, &seat_listener, swaylock_seat);
+    struct dewlock_seat *dewlock_seat =
+        calloc(1, sizeof(struct dewlock_seat));
+    dewlock_seat->state = state;
+    wl_seat_add_listener(seat, &seat_listener, dewlock_seat);
   } else if (strcmp(interface, wl_output_interface.name) == 0) {
-    struct swaylock_surface *surface =
-        calloc(1, sizeof(struct swaylock_surface));
+    struct dewlock_surface *surface =
+        calloc(1, sizeof(struct dewlock_surface));
     surface->state = state;
     surface->output = wl_registry_bind(registry, name, &wl_output_interface, 4);
     surface->output_global_name = name;
@@ -321,8 +321,8 @@ static void handle_global(void *data, struct wl_registry *registry,
 
 static void handle_global_remove(void *data, struct wl_registry *registry,
                                  uint32_t name) {
-  struct swaylock_state *state = data;
-  struct swaylock_surface *surface;
+  struct dewlock_state *state = data;
+  struct dewlock_surface *surface;
   wl_list_for_each(surface, &state->surfaces, link) {
     if (surface->output_global_name == name) {
       destroy_surface(surface);
@@ -340,9 +340,9 @@ static int sigusr_fds[2] = {-1, -1};
 
 void do_sigusr(int sig) { (void)write(sigusr_fds[1], "1", 1); }
 
-static cairo_surface_t *select_image(struct swaylock_state *state,
-                                     struct swaylock_surface *surface) {
-  struct swaylock_image *image;
+static cairo_surface_t *select_image(struct dewlock_state *state,
+                                     struct dewlock_surface *surface) {
+  struct dewlock_image *image;
   cairo_surface_t *default_image = NULL;
   wl_list_for_each(image, &state->images, link) {
     if (lenient_strcmp(image->output_name, surface->output_name) == 0) {
@@ -371,12 +371,12 @@ static char *join_args(char **argv, int argc) {
   return res;
 }
 
-static void load_image(struct swaylock_state *state) {
+static void load_image(struct dewlock_state *state) {
   char *raw_image = state->args.background.path;
   if (!raw_image)
     return;
   // [[<output>]:]<path>
-  struct swaylock_image *image = calloc(1, sizeof(struct swaylock_image));
+  struct dewlock_image *image = calloc(1, sizeof(struct dewlock_image));
   char *separator = strchr(raw_image, ':');
   if (separator) {
     *separator = '\0';
@@ -387,14 +387,14 @@ static void load_image(struct swaylock_state *state) {
     image->path = strdup(raw_image);
   }
 
-  struct swaylock_image *iter_image, *temp;
+  struct dewlock_image *iter_image, *temp;
   wl_list_for_each_safe(iter_image, temp, &state->images, link) {
     if (lenient_strcmp(iter_image->output_name, image->output_name) == 0) {
       if (image->output_name) {
-        swaylock_log(LOG_DEBUG, "Replacing image defined for output %s with %s",
+        dewlock_log(LOG_DEBUG, "Replacing image defined for output %s with %s",
                      image->output_name, image->path);
       } else {
-        swaylock_log(LOG_DEBUG, "Replacing default image with %s", image->path);
+        dewlock_log(LOG_DEBUG, "Replacing default image with %s", image->path);
       }
       wl_list_remove(&iter_image->link);
       free(iter_image->cairo_surface);
@@ -428,11 +428,11 @@ static void load_image(struct swaylock_state *state) {
     return;
   }
   wl_list_insert(&state->images, &image->link);
-  swaylock_log(LOG_DEBUG, "Loaded image %s for output %s", image->path,
+  dewlock_log(LOG_DEBUG, "Loaded image %s for output %s", image->path,
                image->output_name ? image->output_name : "*");
 }
 
-static int parse_cli_args(int argc, char **argv, struct swaylock_state *state,
+static int parse_cli_args(int argc, char **argv, struct dewlock_state *state,
                           char **config_path) {
   static struct option long_options[] = {
       {"config", required_argument, NULL, 'c'},
@@ -443,7 +443,7 @@ static int parse_cli_args(int argc, char **argv, struct swaylock_state *state,
       {"version", no_argument, NULL, 'v'},
       {0, 0, 0, 0}};
 
-  const char usage[] = "Usage: swaylock [options...]\n"
+  const char usage[] = "Usage: dewlock [options...]\n"
                        "\n"
                        "  -c, --config <config_file>       "
                        "Path to the config file.\n"
@@ -473,7 +473,7 @@ static int parse_cli_args(int argc, char **argv, struct swaylock_state *state,
       }
       break;
     case 'd':
-      swaylock_log_init(LOG_DEBUG);
+      dewlock_log_init(LOG_DEBUG);
       break;
     case 'f':
       if (state) {
@@ -486,7 +486,7 @@ static int parse_cli_args(int argc, char **argv, struct swaylock_state *state,
       }
       break;
     case 'v':
-      fprintf(stdout, "swaylock version " SWAYLOCK_VERSION "\n");
+      fprintf(stdout, "dewlock version " DEWLOCK_VERSION "\n");
       exit(EXIT_SUCCESS);
       break;
     default:
@@ -504,14 +504,14 @@ static bool file_exists(const char *path) {
 
 static char *get_config_path(void) {
   static const char *config_paths[] = {
-      "$HOME/.swaylock/config",
-      "$XDG_CONFIG_HOME/swaylock/config",
-      SYSCONFDIR "/swaylock/config",
+      "$HOME/.dewlock/config",
+      "$XDG_CONFIG_HOME/dewlock/config",
+      SYSCONFDIR "/dewlock/config",
   };
 
   char *config_home = getenv("XDG_CONFIG_HOME");
   if (!config_home || config_home[0] == '\0') {
-    config_paths[1] = "$HOME/.config/swaylock/config";
+    config_paths[1] = "$HOME/.config/dewlock/config";
   }
 
   wordexp_t p;
@@ -530,10 +530,10 @@ static char *get_config_path(void) {
   return NULL;
 }
 
-static int load_config(char *path, struct swaylock_state *state) {
+static int load_config(char *path, struct dewlock_state *state) {
   FILE *config = fopen(path, "r");
   if (!config) {
-    swaylock_log(LOG_ERROR, "Failed to read config. Running without it.");
+    dewlock_log(LOG_ERROR, "Failed to read config. Running without it.");
     return 0;
   }
   char *line = NULL;
@@ -551,10 +551,10 @@ static int load_config(char *path, struct swaylock_state *state) {
       continue;
     }
 
-    swaylock_log(LOG_DEBUG, "Config Line #%d: %s", line_number, line);
+    dewlock_log(LOG_DEBUG, "Config Line #%d: %s", line_number, line);
     char *separator = strchr(line, CONFIG_VALUE_SEPARATOR);
     if (!separator) {
-      swaylock_log(LOG_ERROR, "Invalid config line. Skipping.");
+      dewlock_log(LOG_ERROR, "Invalid config line. Skipping.");
       continue;
     }
 
@@ -563,7 +563,7 @@ static int load_config(char *path, struct swaylock_state *state) {
 
     char *dot = strchr(line, CONFIG_NAMESPACE_SEPARATOR);
     if (!dot) {
-      swaylock_log(LOG_ERROR, "Invalid config line. Skipping.");
+      dewlock_log(LOG_ERROR, "Invalid config line. Skipping.");
       continue;
     }
     *dot = '\0';
@@ -651,7 +651,7 @@ static void comm_in(int fd, short mask, void *data) {
       damage_state(&state);
     }
   } else if (mask & (POLLHUP | POLLERR)) {
-    swaylock_log(LOG_ERROR, "Password checking subprocess crashed; exiting.");
+    dewlock_log(LOG_ERROR, "Password checking subprocess crashed; exiting.");
     exit(EXIT_FAILURE);
   }
 }
@@ -677,11 +677,11 @@ void log_init(int argc, char **argv) {
     }
     switch (c) {
     case 'd':
-      swaylock_log_init(LOG_DEBUG);
+      dewlock_log_init(LOG_DEBUG);
       return;
     }
   }
-  swaylock_log_init(LOG_ERROR);
+  dewlock_log_init(LOG_ERROR);
 }
 
 int main(int argc, char **argv) {
@@ -690,7 +690,7 @@ int main(int argc, char **argv) {
   srand(time(NULL));
 
   state.failed_attempts = 0;
-  state.args = (struct swaylock_args){
+  state.args = (struct dewlock_args){
       .font.family = "sans-serif",
       .font.size = 16,
       .background.mode = BACKGROUND_MODE_FILL,
@@ -716,7 +716,7 @@ int main(int argc, char **argv) {
   }
 
   if (config_path) {
-    swaylock_log(LOG_DEBUG, "Found config at %s", config_path);
+    dewlock_log(LOG_DEBUG, "Found config at %s", config_path);
     int config_status = load_config(config_path, &state);
     free(config_path);
     if (config_status != 0) {
@@ -725,7 +725,7 @@ int main(int argc, char **argv) {
   }
 
   if (argc > 1) {
-    swaylock_log(LOG_DEBUG, "Parsing CLI Args");
+    dewlock_log(LOG_DEBUG, "Parsing CLI Args");
     int result = parse_cli_args(argc, argv, &state, NULL);
     if (result != 0) {
       return result;
@@ -744,11 +744,11 @@ int main(int argc, char **argv) {
   load_image(&state);
 
   if (pipe(sigusr_fds) != 0) {
-    swaylock_log(LOG_ERROR, "Failed to pipe");
+    dewlock_log(LOG_ERROR, "Failed to pipe");
     return EXIT_FAILURE;
   }
   if (fcntl(sigusr_fds[1], F_SETFL, O_NONBLOCK) == -1) {
-    swaylock_log(LOG_ERROR, "Failed to make pipe end nonblocking");
+    dewlock_log(LOG_ERROR, "Failed to make pipe end nonblocking");
     return EXIT_FAILURE;
   }
 
@@ -756,7 +756,7 @@ int main(int argc, char **argv) {
   state.xkb.context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
   state.display = wl_display_connect(NULL);
   if (!state.display) {
-    swaylock_log(LOG_ERROR, "Unable to connect to the compositor. "
+    dewlock_log(LOG_ERROR, "Unable to connect to the compositor. "
                             "If your compositor is running, check or set the "
                             "WAYLAND_DISPLAY environment variable.");
     return EXIT_FAILURE;
@@ -766,27 +766,27 @@ int main(int argc, char **argv) {
   struct wl_registry *registry = wl_display_get_registry(state.display);
   wl_registry_add_listener(registry, &registry_listener, &state);
   if (wl_display_roundtrip(state.display) == -1) {
-    swaylock_log(LOG_ERROR, "wl_display_roundtrip() failed");
+    dewlock_log(LOG_ERROR, "wl_display_roundtrip() failed");
     return EXIT_FAILURE;
   }
 
   if (!state.compositor) {
-    swaylock_log(LOG_ERROR, "Missing wl_compositor");
+    dewlock_log(LOG_ERROR, "Missing wl_compositor");
     return 1;
   }
 
   if (!state.subcompositor) {
-    swaylock_log(LOG_ERROR, "Missing wl_subcompositor");
+    dewlock_log(LOG_ERROR, "Missing wl_subcompositor");
     return 1;
   }
 
   if (!state.shm) {
-    swaylock_log(LOG_ERROR, "Missing wl_shm");
+    dewlock_log(LOG_ERROR, "Missing wl_shm");
     return 1;
   }
 
   if (!state.ext_session_lock_manager_v1) {
-    swaylock_log(LOG_ERROR, "Missing ext-session-lock-v1");
+    dewlock_log(LOG_ERROR, "Missing ext-session-lock-v1");
     return 1;
   }
 
@@ -799,19 +799,19 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  struct swaylock_surface *surface;
+  struct dewlock_surface *surface;
   wl_list_for_each(surface, &state.surfaces, link) { create_surface(surface); }
 
   while (!state.locked) {
     if (wl_display_dispatch(state.display) < 0) {
-      swaylock_log(LOG_ERROR, "wl_display_dispatch() failed");
+      dewlock_log(LOG_ERROR, "wl_display_dispatch() failed");
       return 2;
     }
   }
 
   if (state.args.ready_fd >= 0) {
     if (write(state.args.ready_fd, "\n", 1) != 1) {
-      swaylock_log(LOG_ERROR, "Failed to send readiness notification");
+      dewlock_log(LOG_ERROR, "Failed to send readiness notification");
       return 2;
     }
     close(state.args.ready_fd);

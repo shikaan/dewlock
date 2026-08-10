@@ -1,6 +1,6 @@
-#compdef swaylock
+#compdef dewlock
 #
-# Completion script for swaylock
+# Completion script for dewlock
 #
 
 _arguments -s \

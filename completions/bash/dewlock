@@ -1,6 +1,6 @@
-# swaylock(1) completion
+# dewlock(1) completion
 
-_swaylock()
+_dewlock()
 {
   local cur prev short long
   _get_comp_words_by_ref -n : cur prev
@@ -38,4 +38,4 @@ _swaylock()
   fi
 
 } &&
-complete -F _swaylock swaylock
+complete -F _dewlock dewlock
