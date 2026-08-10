@@ -1,5 +1,4 @@
-#ifndef _DEWLOCK_CONFIGURATION_H
-#define _DEWLOCK_CONFIGURATION_H
+#pragma once
 #include "dewlock.h"
 
 // Parses argv into `state` and/or `config_path`. Either output pointer may be
@@ -21,5 +20,3 @@ int load_config(char *path, struct dewlock_state *state);
 // Loads the background image(s) referenced by state->args.background.path
 // into state->images.
 void load_image(struct dewlock_state *state);
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef _SWAY_BUFFERS_H
-#define _SWAY_BUFFERS_H
+#pragma once
 #include <cairo/cairo.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -20,5 +19,3 @@ struct pool_buffer *create_buffer(struct wl_shm *shm, struct pool_buffer *buf,
 struct pool_buffer *get_next_buffer(struct wl_shm *shm,
 	struct pool_buffer pool[static 2], uint32_t width, uint32_t height);
 void destroy_buffer(struct pool_buffer *buffer);
-
-#endif

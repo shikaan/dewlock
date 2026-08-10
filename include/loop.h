@@ -1,5 +1,4 @@
-#ifndef _SWAY_LOOP_H
-#define _SWAY_LOOP_H
+#pragma once
 #include <stdbool.h>
 
 /**
@@ -50,5 +49,3 @@ bool loop_remove_fd(struct loop *loop, int fd);
  * Remove a timer from the loop.
  */
 bool loop_remove_timer(struct loop *loop, struct loop_timer *timer);
-
-#endif

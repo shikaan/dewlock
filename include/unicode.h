@@ -1,5 +1,4 @@
-#ifndef _SWAY_UNICODE_H
-#define _SWAY_UNICODE_H
+#pragma once
 #include <stddef.h>
 #include <stdint.h>
 
@@ -36,6 +35,4 @@ int utf8_size(const char *str);
  * Returns the size of a UTF-8 character
  */
 size_t utf8_chsize(uint32_t ch);
-
-#endif
 

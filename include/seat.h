@@ -1,5 +1,4 @@
-#ifndef _DEWLOCK_SEAT_H
-#define _DEWLOCK_SEAT_H
+#pragma once
 #include <xkbcommon/xkbcommon.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -27,5 +26,3 @@ struct dewlock_seat {
 };
 
 extern const struct wl_seat_listener seat_listener;
-
-#endif

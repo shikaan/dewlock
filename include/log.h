@@ -1,5 +1,4 @@
-#ifndef _DEWLOCK_LOG_H
-#define _DEWLOCK_LOG_H
+#pragma once
 
 #include <stdarg.h>
 #include <string.h>
@@ -32,5 +31,3 @@ const char *_dewlock_strip_path(const char *filepath);
 
 #define dewlock_log_errno(verb, fmt, ...) \
 	dewlock_log(verb, fmt ": %s", ##__VA_ARGS__, strerror(errno))
-
-#endif

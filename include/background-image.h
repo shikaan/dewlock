@@ -1,5 +1,4 @@
-#ifndef _SWAY_BACKGROUND_IMAGE_H
-#define _SWAY_BACKGROUND_IMAGE_H
+#pragma once
 #include "cairo.h"
 
 enum background_mode {
@@ -16,5 +15,3 @@ enum background_mode parse_background_mode(const char *mode);
 cairo_surface_t *load_background_image(const char *path);
 void render_background_image(cairo_t *cairo, cairo_surface_t *image,
 		enum background_mode mode, int buffer_width, int buffer_height);
-
-#endif

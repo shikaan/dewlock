@@ -1,5 +1,4 @@
-#ifndef _DEWLOCK_H
-#define _DEWLOCK_H
+#pragma once
 #include "background-image.h"
 #include "cairo.h"
 #include "pool-buffer.h"
@@ -118,5 +117,3 @@ void clear_buffer(char *buf, size_t size);
 
 // Like strcmp, but treats NULL as distinct from (and less than) any string.
 int lenient_strcmp(char *a, char *b);
-
-#endif
