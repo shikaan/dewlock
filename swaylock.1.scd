@@ -12,37 +12,20 @@ Locks your Wayland session.
 
 # OPTIONS
 
-*-C, --config* <path>
+*-c, --config* <path>
 	The config file to use. By default, the following paths are checked:
 	_$HOME/.swaylock/config_, _$XDG\_CONFIG\_HOME/swaylock/config_, and
-	_SYSCONFDIR/swaylock/config_. All flags aside from this one are valid
-	options in the configuration file using the format _long-option=value_.
-	For options such as _ignore-empty-password_, just supply the _long-option_.
-	All leading dashes should be omitted and the equals sign is required for
-	flags that take an argument. For example:
-
-	```
-	image=/usr/share/backgrounds/sway/Sway_Wallpaper_Blue_768x1024.png
-	scaling=center
-	show-failed-attempts
-	ring-color=#ff00ff
-	```
+	_SYSCONFDIR/swaylock/config_. See *CONFIGURATION* for details.
 
 *-d, --debug*
 	Enable debugging output.
-
-*-e, --ignore-empty-password*
-	When an empty password is provided, do not validate it.
-
-*-F, --show-failed-attempts*
-	Show current count of failed authentication attempts.
 
 *-f, --daemonize*
 	Detach from the controlling terminal after locking.
 
 	Note: this is the default behavior of i3lock.
 
-*-R, --ready-fd* <fd>
+*-r, --ready-fd* <fd>
 	File descriptor to send readiness notifications to.
 
 	When the session has been locked, a single newline is written to the FD.
@@ -55,153 +38,64 @@ Locks your Wayland session.
 *-v, --version*
 	Show the version number and quit.
 
-# APPEARANCE
+# CONFIGURATION
 
-*-u, --no-unlock-indicator*
-	Disable the unlock indicator.
+The config file consists of _namespace.key=value_ pairs, one per line. Lines
+starting with *#* are treated as comments. See *-c* in *OPTIONS* for the
+config file lookup paths.
 
-*-i, --image* [[<output>]:]<path>
-	Display the given image, optionally only on the given output. Use -c to set
-	a background color. If the path potentially contains a ':', prefix it with another
-	':' to prevent interpreting part of it as <output>.
+*background.path* <path>
+	Path to the PNG image to display as the background.
 
-*-k, --show-keyboard-layout*
-	Display the current xkb layout while typing.
+*background.mode* <mode>
+	Background scaling mode: _stretch_, _fill_, _fit_, _center_, _tile_, or
+	_solid\_color_. Use _solid\_color_ to display only *color.background*,
+	ignoring the image. Defaults to _fill_.
 
-*-K, --hide-keyboard-layout*
-	Force hiding the current xkb layout while typing, even if more than one layout
-	is configured or the show-keyboard-layout option is set.
+*font.family* <font>
+	Sets the font of the text. Defaults to _sans-serif_.
 
-*-L, --disable-caps-lock-text*
-	Disable the Caps Lock text.
+*font.size* <size>
+	Sets the font size, which is also used to derive the spacing of every
+	other element on the screen. Defaults to _16_.
 
-*-l, --indicator-caps-lock*
-	Show the current Caps Lock state also on the indicator.
+*color.background* <rrggbb[aa]>
+	Sets the color painted behind the background image. Defaults to
+	_A3A3A3FF_.
 
-*-s, --scaling*
-	Image scaling mode: _stretch_, _fill_, _fit_, _center_, _tile_,
-	_solid\_color_. Use _solid\_color_ to display only the background color, even
-	if a background image is specified.
+*color.overlay* <rrggbb[aa]>
+	Sets the color of the overlay drawn over the screen and behind the
+	password field. Defaults to _00000055_.
 
-*-t, --tiling*
-	Same as --scaling=tile.
+*color.text* <rrggbb[aa]>
+	Sets the color of the text and the password field border. Defaults to
+	_FFFFFFFF_.
 
-*-c, --color* <rrggbb[aa]>
-	Turn the screen into the given color instead of light gray. If -i is used,
-	this sets the background of the image to the given color. Defaults to light
-	gray (A3A3A3).
+*color.warning* <rrggbb[aa]>
+	Sets the color of the Caps Lock warning text. Defaults to _FFDD00FF_.
 
-*--bs-hl-color* <rrggbb[aa]>
-	Sets the color of backspace highlight segments.
+*color.error* <rrggbb[aa]>
+	Sets the color of the text and password field border when
+	authentication fails. Defaults to _CC6566FF_.
 
-*--caps-lock-bs-hl-color* <rrggbb[aa]>
-	Sets the color of backspace highlight segments when Caps Lock is active.
+## Defaults
 
-*--caps-lock-key-hl-color* <rrggbb[aa]>
-	Sets the color of the key press highlight segments when Caps Lock is active.
+Running without a config file, or with one that leaves these keys unset, is
+equivalent to the following configuration:
 
-*--font* <font>
-	Sets the font of the text.
+```
+background.mode=fill
+font.family=sans-serif
+font.size=16
+color.background=A3A3A3FF
+color.overlay=00000055
+color.text=FFFFFFFF
+color.warning=FFDD00FF
+color.error=CC6566FF
+```
 
-*--font-size* <size>
-	Sets a fixed font size for the indicator text.
-
-*--indicator-idle-visible*
-	Sets the indicator to show even if idle.
-
-*--indicator-radius* <radius>
-	Sets the indicator radius. The default value is 50.
-
-*--indicator-thickness* <thickness>
-	Sets the indicator thickness. The default value is 10.
-
-*--indicator-x-position* <x>
-	Sets the horizontal position of the indicator.
-
-*--indicator-y-position* <y>
-	Sets the vertical position of the indicator.
-
-*--inside-color* <rrggbb[aa]>
-	Sets the color of the inside of the indicator.
-
-*--inside-clear-color* <rrggbb[aa]>
-	Sets the color of the inside of the indicator when cleared.
-
-*--inside-caps-lock-color* <rrggbb[aa]>
-	Sets the color of the inside of the indicator when Caps Lock is active.
-
-*--inside-ver-color* <rrggbb[aa]>
-	Sets the color of the inside of the indicator when verifying.
-
-*--inside-wrong-color* <rrggbb[aa]>
-	Sets the color of the inside of the indicator when invalid.
-
-*--key-hl-color* <rrggbb[aa]>
-	Sets the color of the key press highlight segments.
-
-*--layout-bg-color* <rrggbb[aa]>
-	Sets the background color of the box containing the layout text.
-
-*--layout-border-color* <rrggbb[aa]>
-	Sets the color of the border of the box containing the layout text.
-
-*--layout-text-color* <rrggbb[aa]>
-	Sets the color of the layout text.
-
-*--line-color* <rrggbb[aa]>
-	Sets the color of the line between the inside and ring.
-
-*--line-clear-color* <rrggbb[aa]>
-	Sets the color of the line between the inside and ring when cleared.
-
-*--line-caps-lock-color* <rrggbb[aa]>
-	Sets the color of the line between the inside and ring when Caps Lock is
-	active.
-
-*--line-ver-color* <rrggbb[aa]>
-	Sets the color of the line between the inside and ring when verifying.
-
-*--line-wrong-color* <rrggbb[aa]>
-	Sets the color of the line between the inside and ring when invalid.
-
-*-n, --line-uses-inside*
-	Use the inside color for the line between the inside and ring.
-
-*-r, --line-uses-ring*
-	Use the ring color for the line between the inside and ring.
-
-*--ring-color* <rrggbb[aa]>
-	Sets the color of the ring of the indicator when typing or idle.
-
-*--ring-clear-color* <rrggbb[aa]>
-	Sets the color of the ring of the indicator when cleared.
-
-*--ring-caps-lock-color* <rrggbb[aa]>
-	Sets the color of the ring of the indicator when Caps Lock is active.
-
-*--ring-ver-color* <rrggbb[aa]>
-	Sets the color of the ring of the indicator when verifying.
-
-*--ring-wrong-color* <rrggbb[aa]>
-	Sets the color of the ring of the indicator when invalid.
-
-*--separator-color* <rrggbb[aa]>
-	Sets the color of the lines that separate highlight segments.
-
-*--text-color* <rrggbb[aa]>
-	Sets the color of the text.
-
-*--text-clear-color* <rrggbb[aa]>
-	Sets the color of the text when cleared.
-
-*--text-caps-lock-color* <rrggbb[aa]>
-	Sets the color of the text when Caps Lock is active.
-
-*--text-ver-color* <rrggbb[aa]>
-	Sets the color of the text when verifying.
-
-*--text-wrong-color* <rrggbb[aa]>
-	Sets the color of the text when invalid.
+_background.path_ has no default; no background image is drawn unless one is
+set.
 
 # SIGNALS
 
