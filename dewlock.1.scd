@@ -104,6 +104,5 @@ set.
 
 # AUTHORS
 
-Maintained by Drew DeVault <sir@cmpwn.com>, who is assisted by other open
-source contributors. For more information about dewlock development, see
-https://github.com/swaywm/swaylock.
+Maintained by Manuel Spagnolo <shikaan@disroot.org>. For more information
+about dewlock development, see https://github.com/shikaan/dewlock.
