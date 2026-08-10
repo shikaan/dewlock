@@ -1,63 +1,65 @@
-# swaylock
+<h1 align="center">swaylock</h1>
 
-swaylock is a screen locking utility for Wayland compositors. It is compatible
-with any Wayland compositor which implements the ext-session-lock-v1 Wayland
-protocol.
+<p align="center">
+A minimal, beautiful screen locker for Wayland.
+</p>
 
-See the man page, [swaylock(1)](swaylock.1.scd), for instructions on using swaylock.
+swaylock is a fork of [swaywm/swaylock](https://github.com/swaywm/swaylock)
+focused on providing a minimalist, beautiful experience.
 
-## Release Signatures
+Like its predecessor is compatible with any Wayland compositor implementing 
+the ext-session-lock-v1 Wayland protocol.
 
-Releases are signed with [E88F5E48](https://keys.openpgp.org/search?q=34FF9526CFEF0E97A340E2E40FDE7BE0E88F5E48)
-and published [on GitHub](https://github.com/swaywm/swaylock/releases). swaylock
-releases are managed independently of sway releases.
+<p align="center">
+  <img width="640" alt="preview" src="https://github.com/user-attachments/assets/c1cf52f0-9bc1-419e-bf82-252d1a16bb75" />
+</p>
 
-## Installation
+## Quick Start
 
-### From Packages
+### Installation
 
-Swaylock is available in many distributions. Try installing the "swaylock"
-package for yours.
+There are no packaged builds yet. See [CONTRIBUTING.md](CONTRIBUTING.md) to
+build from source.
 
-### Compiling from Source
+### Usage
 
-Install dependencies:
+```sh
+swaylock
+```
 
-* meson \*
-* wayland
-* wayland-protocols \*
-* libxkbcommon
-* cairo
-* pam (optional)
-* [scdoc](https://git.sr.ht/~sircmpwn/scdoc) (optional: man pages) \*
-* git \*
-
-_\* Compile-time dep_
-
-Run these commands:
-
-    meson build
-    ninja -C build
-    sudo ninja -C build install
+Configuration lives in a single `namespace.key=value` file (by default
+`$XDG_CONFIG_HOME/swaylock/config`). See [swaylock(1)](swaylock.1.scd) for
+every option and configuration key.
 
 ##### Without PAM
 
 On systems without PAM, swaylock uses `shadow.h`.
 
 Systems which rely on a tcb-like setup (either via musl's native support or via
-glibc+[tcb]), require no further action.
-
-[tcb]: https://www.openwall.com/tcb/
+glibc+[tcb](https://www.openwall.com/tcb/)), require no further action.
 
 For most other systems, where passwords for all users are stored in `/etc/shadow`,
 swaylock needs to be installed suid:
 
-    sudo chmod a+s /usr/local/bin/swaylock
+```sh
+sudo chmod a+s /usr/local/bin/swaylock
+```
 
 Optionally, on systems where the file `/etc/shadow` is owned by the `shadow`
 group, the binary can be made sgid instead:
 
-    sudo chgrp shadow /usr/local/bin/swaylock
-    sudo chmod g+s /usr/local/bin/swaylock
+```sh
+sudo chgrp shadow /usr/local/bin/swaylock
+sudo chmod g+s /usr/local/bin/swaylock
+```
 
 Swaylock will drop root permissions shortly after startup.
+
+## Contributing
+
+If you'd like to request a feature or report a bug, please create a 
+[GitHub Issue](https://github.com/shikaan/swaylock/issues).
+
+## License
+
+[MIT](./LICENSE)
