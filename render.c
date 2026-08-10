@@ -1,7 +1,7 @@
 #include "background-image.h"
 #include "cairo.h"
-#include "log.h"
 #include "dewlock.h"
+#include "log.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,7 +46,7 @@ void render(struct dewlock_surface *surface) {
     if (!create_buffer(state->shm, &buffer, buffer_width, buffer_height,
                        WL_SHM_FORMAT_ARGB8888)) {
       dewlock_log(LOG_ERROR,
-                   "Failed to create new buffer for frame background.");
+                  "Failed to create new buffer for frame background.");
       return;
     }
 
@@ -154,8 +154,8 @@ static inline size_t min3u(size_t a, size_t b, size_t c) {
 }
 
 static inline void set_password(cairo_t *c, struct dewlock_state *state,
-                                struct dewlock_text opts, double w,
-                                double maxw, char *chars, size_t nchars) {
+                                struct dewlock_text opts, double w, double maxw,
+                                char *chars, size_t nchars) {
   static size_t last_len;
   cairo_text_extents_t glyph_extents;
   init_text(c, w, 0, opts, "*", &glyph_extents);
@@ -173,10 +173,11 @@ static inline void set_password(cairo_t *c, struct dewlock_state *state,
 
 static void draw_form(cairo_t *c, struct dewlock_state *state, double h,
                       double w) {
-  const double formy =
-      h / 2 - state->args.font.size * 4; // FIXME: calculate form size and move up
   const double inputw = state->args.font.size * 20;
   const double inputpadx = state->args.font.size;
+  const double inputh = state->args.font.size * 3;
+  const double spacing = state->args.font.size * 1.5;
+  const double border = state->args.font.size * 0.25;
   cairo_text_extents_t extents;
 
   struct dewlock_text opts = {
@@ -190,13 +191,34 @@ static void draw_form(cairo_t *c, struct dewlock_state *state, double h,
   static char pwd[128];
   set_password(c, state, opts, w, inputw - inputpadx * 2, pwd, sizeof(pwd));
 
-  opts.size = state->args.font.size * 2.25;
-  opts.weight = CAIRO_FONT_WEIGHT_BOLD;
-  draw_text(c, w, formy, opts, state->username, &extents);
+  const char *msg = "";
+  if (state->auth_state == AUTH_STATE_IDLE) {
+    msg = "Press Enter to submit";
+  } else if (state->auth_state == AUTH_STATE_VALIDATING) {
+    msg = "Verifying...";
+  } else {
+    msg = "Invalid credentials. Try again";
+  }
 
-  const double inputh = state->args.font.size * 3;
-  const double spacing = state->args.font.size * 1.5;
-  const double border = state->args.font.size * 0.25;
+  struct dewlock_text username_opts = opts;
+  username_opts.size = state->args.font.size * 2.25;
+  username_opts.weight = CAIRO_FONT_WEIGHT_BOLD;
+
+  struct dewlock_text message_opts = opts;
+  message_opts.size = state->args.font.size;
+  message_opts.weight = CAIRO_FONT_WEIGHT_NORMAL;
+
+  cairo_text_extents_t username_extents, message_extents;
+  init_text(c, w, 0, username_opts, state->username, &username_extents);
+  init_text(c, w, 0, message_opts, msg, &message_extents);
+
+  const double form_height =
+      -username_extents.y_bearing + username_extents.height + spacing + inputh +
+      spacing * 3 + message_extents.y_bearing + message_extents.height;
+  const double formy = h / 2 - form_height / 2 - username_extents.y_bearing;
+
+  draw_text(c, w, formy, username_opts, state->username, &extents);
+
   const double inputx = w / 2 - inputw / 2;
   const double inputy = formy + extents.height + spacing;
 
@@ -228,20 +250,8 @@ static void draw_form(cairo_t *c, struct dewlock_state *state, double h,
               &extents);
   }
 
-  opts.size = state->args.font.size;
-  opts.weight = CAIRO_FONT_WEIGHT_NORMAL;
-  opts.color = color;
-
-  const char *msg = "";
-  if (state->auth_state == AUTH_STATE_IDLE) {
-    msg = "Press Enter to submit";
-  } else if (state->auth_state == AUTH_STATE_VALIDATING) {
-    msg = "Verifying...";
-  } else {
-    msg = "Invalid credentials. Try again";
-  }
-
-  draw_text(c, w, inputy + inputh + spacing * 3, opts, msg, &extents);
+  message_opts.color = color;
+  draw_text(c, w, inputy + inputh + spacing * 3, message_opts, msg, &extents);
 }
 
 static bool render_frame(struct dewlock_surface *surface) {
