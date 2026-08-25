@@ -100,6 +100,7 @@ void render_background_image(cairo_t *cairo, cairo_surface_t *image,
   }
   case BACKGROUND_MODE_SOLID_COLOR:
   case BACKGROUND_MODE_INVALID:
+  default:
     assert(0);
     break;
   }

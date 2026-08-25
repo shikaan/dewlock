@@ -35,6 +35,8 @@ static void keyboard_keymap(void *data, struct wl_keyboard *wl_keyboard,
     xkb_state = xkb_state_new(keymap);
     assert(xkb_state);
     break;
+  default:
+    break;
   }
 
   close(fd);

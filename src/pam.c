@@ -58,6 +58,7 @@ static int handle_conversation(int num_msg, const struct pam_message **msg,
       break;
     case PAM_ERROR_MSG:
     case PAM_TEXT_INFO:
+    default:
       break;
     }
   }

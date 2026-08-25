@@ -10,7 +10,7 @@
 static bool mlock_supported = true;
 static long int page_size = 0;
 
-static long int get_page_size() {
+static long int get_page_size(void) {
   if (!page_size) {
     page_size = sysconf(_SC_PAGESIZE);
   }
