@@ -27,8 +27,8 @@ static bool render_frame(struct dewlock_surface *surface);
 void render(struct dewlock_surface *surface) {
   struct dewlock_state *state = surface->state;
 
-  int buffer_width = surface->width * surface->scale;
-  int buffer_height = surface->height * surface->scale;
+  int buffer_width = (int)surface->width * surface->scale;
+  int buffer_height = (int)surface->height * surface->scale;
   if (buffer_width == 0 || buffer_height == 0) {
     return; // not yet configured
   }
@@ -259,18 +259,19 @@ static bool render_frame(struct dewlock_surface *surface) {
   struct dewlock_state *state = surface->state;
 
   // Compute the size of the buffer needed
-  int buffer_width = surface->width;
-  int buffer_height = surface->height;
+  int buffer_width = (int)surface->width;
+  int buffer_height = (int)surface->height;
 
   // Ensure buffer size is multiple of buffer scale - required by protocol
   buffer_height += surface->scale - (buffer_height % surface->scale);
   buffer_width += surface->scale - (buffer_width % surface->scale);
 
-  int subsurf_xpos = surface->width / 2 - buffer_width / 2;
+  int subsurf_xpos = (int)surface->width / 2 - buffer_width / 2;
   int subsurf_ypos = 0;
 
-  struct pool_buffer *buffer = get_next_buffer(
-      state->shm, surface->indicator_buffers, buffer_width, buffer_height);
+  struct pool_buffer *buffer =
+      get_next_buffer(state->shm, surface->indicator_buffers,
+                      (uint32_t)buffer_width, (uint32_t)buffer_height);
   if (buffer == NULL) {
     dewlock_log(LOG_ERROR, "No buffer%s", "");
     return false;

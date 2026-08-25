@@ -46,11 +46,11 @@ size_t utf8_encode(char *str, uint32_t ch) {
   }
 
   for (size_t i = len - 1; i > 0; --i) {
-    str[i] = (ch & 0x3f) | 0x80;
+    str[i] = (char)((ch & 0x3f) | 0x80);
     ch >>= 6;
   }
 
-  str[0] = ch | first;
+  str[0] = (char)(ch | first);
   return len;
 }
 

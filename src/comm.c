@@ -29,9 +29,9 @@ static ssize_t read_full(int fd, void *dst, size_t size) {
       dewlock_log(LOG_ERROR, "read() failed: unexpected EOF%s", "");
       return -1;
     }
-    offset += n;
+    offset += (size_t)n;
   }
-  return offset;
+  return (ssize_t)offset;
 }
 
 static bool write_full(int fd, const void *src, size_t size) {
@@ -47,7 +47,7 @@ static bool write_full(int fd, const void *src, size_t size) {
       dewlock_log_errno(LOG_ERROR, "write() failed%s", "");
       return false;
     }
-    offset += n;
+    offset += (size_t)n;
   }
   return true;
 }
@@ -76,7 +76,7 @@ ssize_t read_comm_request(char **buf_ptr) {
 
   assert(buf[size - 1] == '\0');
   *buf_ptr = buf;
-  return size;
+  return (ssize_t)size;
 }
 
 bool write_comm_reply(bool success) {

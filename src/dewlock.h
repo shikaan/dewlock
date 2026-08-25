@@ -113,6 +113,9 @@ void schedule_auth_idle(struct dewlock_state *state);
 
 void initialize_pw_backend(int argc, char **argv);
 void run_pw_backend_child(void);
+// FIXME: declared but never defined anywhere; src/shadow.c calls this and
+// fails to link (PAM=0 build only). Was removed at some point in history
+// (see `git log -S"clear_buffer"`) without updating callers.
 void clear_buffer(char *buf, size_t size);
 
 // Like strcmp, but treats NULL as distinct from (and less than) any string.

@@ -48,8 +48,8 @@ static const struct wl_buffer_listener buffer_listener = {.release =
 struct pool_buffer *create_buffer(struct wl_shm *shm, struct pool_buffer *buf,
                                   int32_t width, int32_t height,
                                   uint32_t format) {
-  uint32_t stride = width * 4;
-  size_t size = stride * height;
+  uint32_t stride = (uint32_t)width * 4;
+  size_t size = stride * (uint32_t)height;
 
   void *data = NULL;
   if (size > 0) {
@@ -57,25 +57,25 @@ struct pool_buffer *create_buffer(struct wl_shm *shm, struct pool_buffer *buf,
     if (fd == -1) {
       return NULL;
     }
-    if (ftruncate(fd, size) < 0) {
+    if (ftruncate(fd, (off_t)size) < 0) {
       close(fd);
       return NULL;
     }
     data = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    struct wl_shm_pool *pool = wl_shm_create_pool(shm, fd, size);
-    buf->buffer =
-        wl_shm_pool_create_buffer(pool, 0, width, height, stride, format);
+    struct wl_shm_pool *pool = wl_shm_create_pool(shm, fd, (int32_t)size);
+    buf->buffer = wl_shm_pool_create_buffer(pool, 0, width, height,
+                                            (int32_t)stride, format);
     wl_buffer_add_listener(buf->buffer, &buffer_listener, buf);
     wl_shm_pool_destroy(pool);
     close(fd);
   }
 
   buf->size = size;
-  buf->width = width;
-  buf->height = height;
+  buf->width = (uint32_t)width;
+  buf->height = (uint32_t)height;
   buf->data = data;
-  buf->surface = cairo_image_surface_create_for_data(data, CAIRO_FORMAT_ARGB32,
-                                                     width, height, stride);
+  buf->surface = cairo_image_surface_create_for_data(
+      data, CAIRO_FORMAT_ARGB32, width, height, (int)stride);
   buf->cairo = cairo_create(buf->surface);
   return buf;
 }
@@ -117,7 +117,8 @@ struct pool_buffer *get_next_buffer(struct wl_shm *shm,
   }
 
   if (!buffer->buffer) {
-    if (!create_buffer(shm, buffer, width, height, WL_SHM_FORMAT_ARGB8888)) {
+    if (!create_buffer(shm, buffer, (int32_t)width, (int32_t)height,
+                       WL_SHM_FORMAT_ARGB8888)) {
       return NULL;
     }
   }

@@ -19,7 +19,7 @@ void clear_password_buffer(struct dewlock_string *pw) {
 
 static bool backspace(struct dewlock_string *pw) {
   if (pw->len != 0) {
-    pw->len -= utf8_last_size(pw->buf);
+    pw->len -= (size_t)utf8_last_size(pw->buf);
     pw->buf[pw->len] = 0;
     return true;
   }

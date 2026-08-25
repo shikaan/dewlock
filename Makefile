@@ -21,8 +21,8 @@ COMMON_CFLAGS := -std=c11 \
 	-Wwrite-strings \
 	-Wshadow \
 	-pedantic \
-	-Wno-conversion \
-	-Wno-sign-conversion \
+	-Wconversion \
+	-Wsign-conversion \
 	-Wno-ignored-qualifiers
 
 SANITIZERS := -fsanitize=address,undefined

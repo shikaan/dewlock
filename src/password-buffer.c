@@ -58,7 +58,7 @@ static bool password_buffer_unlock(char *addr, size_t size) {
 
 char *password_buffer_create(size_t size) {
   void *buffer;
-  int result = posix_memalign(&buffer, get_page_size(), size);
+  int result = posix_memalign(&buffer, (size_t)get_page_size(), size);
   if (result) {
     // posix_memalign doesn't set errno according to the man page
     errno = result;

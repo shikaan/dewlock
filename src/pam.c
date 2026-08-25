@@ -33,7 +33,8 @@ static int handle_conversation(int num_msg, const struct pam_message **msg,
   struct conv_state *state = data;
 
   /* PAM expects an array of responses, one for each message */
-  struct pam_response *pam_reply = calloc(num_msg, sizeof(struct pam_response));
+  struct pam_response *pam_reply =
+      calloc((size_t)num_msg, sizeof(struct pam_response));
   if (pam_reply == NULL) {
     dewlock_log(LOG_ERROR, "Allocation failed%s", "");
     return PAM_ABORT;
@@ -119,7 +120,7 @@ void run_pw_backend_child(void) {
 
     state.password = pw_buf;
     pam_status = pam_authenticate(auth_handle, 0);
-    password_buffer_destroy(pw_buf, size);
+    password_buffer_destroy(pw_buf, (size_t)size);
     pw_buf = NULL;
     state.password = NULL;
 
