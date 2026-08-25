@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include <wayland-client.h>
 
-static struct dewlock_state state;
+static struct dewlock_state g_state;
 
 static const struct ext_session_lock_surface_v1_listener
     ext_session_lock_surface_v1_listener;
@@ -47,7 +47,7 @@ int lenient_strcmp(char *a, char *b) {
 static void daemonize(void) {
   int fds[2];
   if (pipe(fds) != 0) {
-    dewlock_log(LOG_ERROR, "Failed to pipe");
+    dewlock_log(LOG_ERROR, "Failed to pipe%s", "");
     exit(1);
   }
   if (fork() == 0) {
@@ -71,7 +71,7 @@ static void daemonize(void) {
     close(fds[1]);
     uint8_t success;
     if (read(fds[0], &success, 1) != 1 || !success) {
-      dewlock_log(LOG_ERROR, "Failed to daemonize");
+      dewlock_log(LOG_ERROR, "Failed to daemonize%s", "");
       exit(1);
     }
     close(fds[0]);
@@ -237,7 +237,7 @@ static void
 ext_session_lock_v1_handle_finished(void *data,
                                     struct ext_session_lock_v1 *lock) {
   dewlock_log(LOG_ERROR, "Failed to lock session -- "
-                         "is another lockscreen running?");
+                         "is another lockscreen running?%s", "");
   exit(2);
 }
 
@@ -315,8 +315,8 @@ static cairo_surface_t *select_image(struct dewlock_state *state,
 }
 
 static void display_in(int fd, short mask, void *data) {
-  if (wl_display_dispatch(state.display) == -1) {
-    state.run_display = false;
+  if (wl_display_dispatch(g_state.display) == -1) {
+    g_state.run_display = false;
   }
 }
 
@@ -328,21 +328,21 @@ static void comm_in(int fd, short mask, void *data) {
     }
     if (auth_success) {
       // Authentication succeeded
-      state.run_display = false;
+      g_state.run_display = false;
     } else {
-      state.auth_state = AUTH_STATE_INVALID;
-      schedule_auth_idle(&state);
-      ++state.failed_attempts;
-      damage_state(&state);
+      g_state.auth_state = AUTH_STATE_INVALID;
+      schedule_auth_idle(&g_state);
+      ++g_state.failed_attempts;
+      damage_state(&g_state);
     }
   } else if (mask & (POLLHUP | POLLERR)) {
-    dewlock_log(LOG_ERROR, "Password checking subprocess crashed; exiting.");
+    dewlock_log(LOG_ERROR, "Password checking subprocess crashed; exiting.%s", "");
     exit(EXIT_FAILURE);
   }
 }
 
 static void term_in(int fd, short mask, void *data) {
-  state.run_display = false;
+  g_state.run_display = false;
 }
 
 // Check for --debug 'early' we also apply the correct loglevel
@@ -376,8 +376,8 @@ int main(int argc, char **argv) {
   initialize_pw_backend(argc, argv);
   srand(time(NULL));
 
-  state.failed_attempts = 0;
-  state.args = (struct dewlock_args){
+  g_state.failed_attempts = 0;
+  g_state.args = (struct dewlock_args){
       .font.family = "sans-serif",
       .font.size = 16,
       .background.mode = BACKGROUND_MODE_FILL,
@@ -388,9 +388,9 @@ int main(int argc, char **argv) {
       .colors.error = 0xcc6566ff,
       .ready_fd = -1,
   };
-  wl_list_init(&state.images);
+  wl_list_init(&g_state.images);
 
-  state.username = getpwuid(getuid())->pw_name;
+  g_state.username = getpwuid(getuid())->pw_name;
 
   char *config_path = NULL;
   int result = parse_cli_args(argc, argv, NULL, &config_path);
@@ -404,7 +404,7 @@ int main(int argc, char **argv) {
 
   if (config_path) {
     dewlock_log(LOG_DEBUG, "Found config at %s", config_path);
-    int config_status = load_config(config_path, &state);
+    int config_status = load_config(config_path, &g_state);
     free(config_path);
     if (config_status != 0) {
       return config_status;
@@ -412,110 +412,110 @@ int main(int argc, char **argv) {
   }
 
   if (argc > 1) {
-    dewlock_log(LOG_DEBUG, "Parsing CLI Args");
-    int result = parse_cli_args(argc, argv, &state, NULL);
+    dewlock_log(LOG_DEBUG, "Parsing CLI Args%s", "");
+    result = parse_cli_args(argc, argv, &g_state, NULL);
     if (result != 0) {
       return result;
     }
   }
 
-  state.password.len = 0;
-  state.password.cap = 1024;
-  state.password.buf = password_buffer_create(state.password.cap);
-  if (!state.password.buf) {
+  g_state.password.len = 0;
+  g_state.password.cap = 1024;
+  g_state.password.buf = password_buffer_create(g_state.password.cap);
+  if (!g_state.password.buf) {
     return EXIT_FAILURE;
   }
-  state.password.buf[0] = 0;
+  g_state.password.buf[0] = 0;
 
-  state_set_time(&state);
-  load_image(&state);
+  state_set_time(&g_state);
+  load_image(&g_state);
 
   if (pipe(sigusr_fds) != 0) {
-    dewlock_log(LOG_ERROR, "Failed to pipe");
+    dewlock_log(LOG_ERROR, "Failed to pipe%s", "");
     return EXIT_FAILURE;
   }
   if (fcntl(sigusr_fds[1], F_SETFL, O_NONBLOCK) == -1) {
-    dewlock_log(LOG_ERROR, "Failed to make pipe end nonblocking");
+    dewlock_log(LOG_ERROR, "Failed to make pipe end nonblocking%s", "");
     return EXIT_FAILURE;
   }
 
-  wl_list_init(&state.surfaces);
-  state.xkb.context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
-  state.display = wl_display_connect(NULL);
-  if (!state.display) {
+  wl_list_init(&g_state.surfaces);
+  g_state.xkb.context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+  g_state.display = wl_display_connect(NULL);
+  if (!g_state.display) {
     dewlock_log(LOG_ERROR, "Unable to connect to the compositor. "
                            "If your compositor is running, check or set the "
-                           "WAYLAND_DISPLAY environment variable.");
+                           "WAYLAND_DISPLAY environment variable.%s", "");
     return EXIT_FAILURE;
   }
-  state.eventloop = loop_create();
+  g_state.eventloop = loop_create();
 
-  struct wl_registry *registry = wl_display_get_registry(state.display);
-  wl_registry_add_listener(registry, &registry_listener, &state);
-  if (wl_display_roundtrip(state.display) == -1) {
-    dewlock_log(LOG_ERROR, "wl_display_roundtrip() failed");
+  struct wl_registry *registry = wl_display_get_registry(g_state.display);
+  wl_registry_add_listener(registry, &registry_listener, &g_state);
+  if (wl_display_roundtrip(g_state.display) == -1) {
+    dewlock_log(LOG_ERROR, "wl_display_roundtrip() failed%s", "");
     return EXIT_FAILURE;
   }
 
-  if (!state.compositor) {
-    dewlock_log(LOG_ERROR, "Missing wl_compositor");
+  if (!g_state.compositor) {
+    dewlock_log(LOG_ERROR, "Missing wl_compositor%s", "");
     return 1;
   }
 
-  if (!state.subcompositor) {
-    dewlock_log(LOG_ERROR, "Missing wl_subcompositor");
+  if (!g_state.subcompositor) {
+    dewlock_log(LOG_ERROR, "Missing wl_subcompositor%s", "");
     return 1;
   }
 
-  if (!state.shm) {
-    dewlock_log(LOG_ERROR, "Missing wl_shm");
+  if (!g_state.shm) {
+    dewlock_log(LOG_ERROR, "Missing wl_shm%s", "");
     return 1;
   }
 
-  if (!state.ext_session_lock_manager_v1) {
-    dewlock_log(LOG_ERROR, "Missing ext-session-lock-v1");
+  if (!g_state.ext_session_lock_manager_v1) {
+    dewlock_log(LOG_ERROR, "Missing ext-session-lock-v1%s", "");
     return 1;
   }
 
-  state.ext_session_lock_v1 =
-      ext_session_lock_manager_v1_lock(state.ext_session_lock_manager_v1);
-  ext_session_lock_v1_add_listener(state.ext_session_lock_v1,
-                                   &ext_session_lock_v1_listener, &state);
+  g_state.ext_session_lock_v1 =
+      ext_session_lock_manager_v1_lock(g_state.ext_session_lock_manager_v1);
+  ext_session_lock_v1_add_listener(g_state.ext_session_lock_v1,
+                                   &ext_session_lock_v1_listener, &g_state);
 
-  if (wl_display_roundtrip(state.display) == -1) {
+  if (wl_display_roundtrip(g_state.display) == -1) {
     return 1;
   }
 
   struct dewlock_surface *surface;
-  wl_list_for_each(surface, &state.surfaces, link) { create_surface(surface); }
+  wl_list_for_each(surface, &g_state.surfaces, link) { create_surface(surface); }
 
-  while (!state.locked) {
-    if (wl_display_dispatch(state.display) < 0) {
-      dewlock_log(LOG_ERROR, "wl_display_dispatch() failed");
+  while (!g_state.locked) {
+    if (wl_display_dispatch(g_state.display) < 0) {
+      dewlock_log(LOG_ERROR, "wl_display_dispatch() failed%s", "");
       return 2;
     }
   }
 
-  if (state.args.ready_fd >= 0) {
-    if (write(state.args.ready_fd, "\n", 1) != 1) {
-      dewlock_log(LOG_ERROR, "Failed to send readiness notification");
+  if (g_state.args.ready_fd >= 0) {
+    if (write(g_state.args.ready_fd, "\n", 1) != 1) {
+      dewlock_log(LOG_ERROR, "Failed to send readiness notification%s", "");
       return 2;
     }
-    close(state.args.ready_fd);
-    state.args.ready_fd = -1;
+    close(g_state.args.ready_fd);
+    g_state.args.ready_fd = -1;
   }
-  if (state.args.daemonize) {
+  if (g_state.args.daemonize) {
     daemonize();
   }
 
-  loop_add_fd(state.eventloop, wl_display_get_fd(state.display), POLLIN,
+  loop_add_fd(g_state.eventloop, wl_display_get_fd(g_state.display), POLLIN,
               display_in, NULL);
 
-  loop_add_fd(state.eventloop, get_comm_reply_fd(), POLLIN, comm_in, NULL);
+  loop_add_fd(g_state.eventloop, get_comm_reply_fd(), POLLIN, comm_in, NULL);
 
-  loop_add_fd(state.eventloop, sigusr_fds[0], POLLIN, term_in, NULL);
+  loop_add_fd(g_state.eventloop, sigusr_fds[0], POLLIN, term_in, NULL);
 
-  schedule_clock_timer(&state);
+  schedule_clock_timer(&g_state);
 
   struct sigaction sa;
   sa.sa_handler = do_sigusr;
@@ -523,18 +523,18 @@ int main(int argc, char **argv) {
   sa.sa_flags = SA_RESTART;
   sigaction(SIGUSR1, &sa, NULL);
 
-  state.run_display = true;
-  while (state.run_display) {
+  g_state.run_display = true;
+  while (g_state.run_display) {
     errno = 0;
-    if (wl_display_flush(state.display) == -1 && errno != EAGAIN) {
+    if (wl_display_flush(g_state.display) == -1 && errno != EAGAIN) {
       break;
     }
-    loop_poll(state.eventloop);
+    loop_poll(g_state.eventloop);
   }
 
-  cancel_clock_timer(&state);
-  ext_session_lock_v1_unlock_and_destroy(state.ext_session_lock_v1);
-  wl_display_roundtrip(state.display);
+  cancel_clock_timer(&g_state);
+  ext_session_lock_v1_unlock_and_destroy(g_state.ext_session_lock_v1);
+  wl_display_roundtrip(g_state.display);
 
   return 0;
 }

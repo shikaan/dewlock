@@ -7,9 +7,9 @@
 void schedule_clock_timer(struct dewlock_state *state);
 
 void state_set_time(struct dewlock_state *state) {
-  static char clock[8] = {};
-  static char date[256] = {};
-  static char month[32] = {};
+  static char clock[8] = {0};
+  static char date[256] = {0};
+  static char month[32] = {0};
 
   time_t now = time(NULL);
   struct tm *lt = localtime(&now);

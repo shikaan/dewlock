@@ -24,7 +24,7 @@ enum background_mode parse_background_mode(const char *mode) {
 cairo_surface_t *load_background_image(const char *path) {
   cairo_surface_t *image = cairo_image_surface_create_from_png(path);
   if (!image) {
-    dewlock_log(LOG_ERROR, "Failed to read background image.");
+    dewlock_log(LOG_ERROR, "Failed to read background image.%s", "");
     return NULL;
   }
   if (cairo_surface_status(image) != CAIRO_STATUS_SUCCESS) {

@@ -25,17 +25,18 @@ static bool password_buffer_lock(char *addr, size_t size) {
     case EAGAIN:
       retries--;
       if (retries == 0) {
-        dewlock_log(LOG_ERROR, "mlock() supported but failed too often.");
+        dewlock_log(LOG_ERROR, "mlock() supported but failed too often.%s", "");
         return false;
       }
       break;
     case EPERM:
       dewlock_log_errno(LOG_ERROR,
-                        "Unable to mlock() password memory: Unsupported!");
+                        "Unable to mlock() password memory: Unsupported!%s",
+                        "");
       mlock_supported = false;
       return true;
     default:
-      dewlock_log_errno(LOG_ERROR, "Unable to mlock() password memory.");
+      dewlock_log_errno(LOG_ERROR, "Unable to mlock() password memory.%s", "");
       return false;
     }
   }
@@ -47,7 +48,7 @@ static bool password_buffer_lock(char *addr, size_t size) {
 static bool password_buffer_unlock(char *addr, size_t size) {
   if (mlock_supported) {
     if (munlock(addr, size) != 0) {
-      dewlock_log_errno(LOG_ERROR, "Unable to munlock() password memory.");
+      dewlock_log_errno(LOG_ERROR, "Unable to munlock() password memory.%s", "");
       return false;
     }
   }
@@ -61,7 +62,7 @@ char *password_buffer_create(size_t size) {
   if (result) {
     // posix_memalign doesn't set errno according to the man page
     errno = result;
-    dewlock_log_errno(LOG_ERROR, "failed to alloc password buffer");
+    dewlock_log_errno(LOG_ERROR, "failed to alloc password buffer%s", "");
     return NULL;
   }
 

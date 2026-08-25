@@ -34,7 +34,7 @@ static int handle_conversation(int num_msg, const struct pam_message **msg,
   /* PAM expects an array of responses, one for each message */
   struct pam_response *pam_reply = calloc(num_msg, sizeof(struct pam_response));
   if (pam_reply == NULL) {
-    dewlock_log(LOG_ERROR, "Allocation failed");
+    dewlock_log(LOG_ERROR, "Allocation failed%s", "");
     return PAM_ABORT;
   }
   *resp = pam_reply;
@@ -51,7 +51,7 @@ static int handle_conversation(int num_msg, const struct pam_message **msg,
       }
       pam_reply[i].resp = strdup(state->password); // PAM clears and frees this
       if (pam_reply[i].resp == NULL) {
-        dewlock_log(LOG_ERROR, "Allocation failed");
+        dewlock_log(LOG_ERROR, "Allocation failed%s", "");
         return PAM_ABORT;
       }
       state->password = NULL;
@@ -87,7 +87,7 @@ void run_pw_backend_child(void) {
   char *pw_buf = NULL;
   struct passwd *passwd = getpwuid(getuid());
   if (!passwd) {
-    dewlock_log_errno(LOG_ERROR, "getpwuid failed");
+    dewlock_log_errno(LOG_ERROR, "getpwuid failed%s", "");
     exit(EXIT_FAILURE);
   }
 
@@ -100,7 +100,7 @@ void run_pw_backend_child(void) {
   };
   pam_handle_t *auth_handle = NULL;
   if (pam_start("dewlock", username, &conv, &auth_handle) != PAM_SUCCESS) {
-    dewlock_log(LOG_ERROR, "pam_start failed");
+    dewlock_log(LOG_ERROR, "pam_start failed%s", "");
     exit(EXIT_FAILURE);
   }
 
@@ -117,7 +117,7 @@ void run_pw_backend_child(void) {
     }
 
     state.password = pw_buf;
-    int pam_status = pam_authenticate(auth_handle, 0);
+    pam_status = pam_authenticate(auth_handle, 0);
     password_buffer_destroy(pw_buf, size);
     pw_buf = NULL;
     state.password = NULL;
@@ -142,7 +142,7 @@ void run_pw_backend_child(void) {
   pam_setcred(auth_handle, PAM_REFRESH_CRED);
 
   if (pam_end(auth_handle, pam_status) != PAM_SUCCESS) {
-    dewlock_log(LOG_ERROR, "pam_end failed");
+    dewlock_log(LOG_ERROR, "pam_end failed%s", "");
     exit(EXIT_FAILURE);
   }
 
