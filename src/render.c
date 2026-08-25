@@ -93,7 +93,7 @@ void render(struct dewlock_surface *surface) {
 struct dewlock_text {
   uint32_t color;
   double size;
-  char *family;
+  const char *family;
   cairo_font_weight_t weight;
 };
 
