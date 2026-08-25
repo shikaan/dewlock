@@ -34,7 +34,7 @@ struct dewlock_args {
     enum background_mode mode;
   } background;
   struct {
-    char *family;
+    const char *family;
     uint32_t size;
   } font;
   bool daemonize;

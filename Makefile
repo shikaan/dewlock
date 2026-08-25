@@ -20,14 +20,14 @@ COMMON_CFLAGS := -std=c11 \
 	-Wswitch-default \
 	-Wswitch-enum \
 	-Waggregate-return \
+	-Wstrict-overflow=5 \
+	-Wwrite-strings \
 	-Wno-conversion \
 	-Wno-sign-conversion \
 	-Wno-ignored-qualifiers \
 	-Wno-unused-parameter
 #	-pedantic \
-#	-Wshadow \
-#	-Wstrict-overflow=5 \
-#	-Wwrite-strings
+#	-Wshadow
 
 SANITIZERS := -fsanitize=address,undefined
 
