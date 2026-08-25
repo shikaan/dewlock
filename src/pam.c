@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 void initialize_pw_backend(int argc, char **argv) {
+  (void)argc;
   if (getuid() != geteuid() || getgid() != getegid()) {
     dewlock_log(LOG_ERROR,
                 "dewlock is setuid, but was compiled with the PAM"

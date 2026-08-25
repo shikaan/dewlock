@@ -1,8 +1,5 @@
 BUILD_TYPE ?= debug
 
-# TODO(Track A): the stricter dewsesh warning wall is disabled below (pedantic,
-# shadow, switch-default, etc.) until the source is brought up to house style.
-# Re-enable incrementally as Track A lands.
 COMMON_CFLAGS := -std=c11 \
 	-D_POSIX_C_SOURCE=200809L \
 	-Wall \
