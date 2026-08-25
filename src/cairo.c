@@ -20,6 +20,8 @@ to_cairo_subpixel_order(enum wl_output_subpixel subpixel) {
     return CAIRO_SUBPIXEL_ORDER_VRGB;
   case WL_OUTPUT_SUBPIXEL_VERTICAL_BGR:
     return CAIRO_SUBPIXEL_ORDER_VBGR;
+  case WL_OUTPUT_SUBPIXEL_UNKNOWN:
+  case WL_OUTPUT_SUBPIXEL_NONE:
   default:
     return CAIRO_SUBPIXEL_ORDER_DEFAULT;
   }
