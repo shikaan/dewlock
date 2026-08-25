@@ -18,17 +18,16 @@ COMMON_CFLAGS := -std=c11 \
 	-Wcast-qual \
 	-Wstrict-prototypes \
 	-Wswitch-default \
+	-Wswitch-enum \
+	-Waggregate-return \
 	-Wno-conversion \
 	-Wno-sign-conversion \
 	-Wno-ignored-qualifiers \
-	-Wno-aggregate-return \
 	-Wno-unused-parameter
 #	-pedantic \
 #	-Wshadow \
 #	-Wstrict-overflow=5 \
-#	-Wwrite-strings \
-#	-Waggregate-return \
-#	-Wswitch-enum
+#	-Wwrite-strings
 
 SANITIZERS := -fsanitize=address,undefined
 
