@@ -16,6 +16,8 @@ COMMON_CFLAGS := -std=c11 \
 	-Wpointer-arith \
 	-Wcast-align \
 	-Wcast-qual \
+	-Wstrict-prototypes \
+	-Wswitch-default \
 	-Wno-conversion \
 	-Wno-sign-conversion \
 	-Wno-ignored-qualifiers \
@@ -23,11 +25,9 @@ COMMON_CFLAGS := -std=c11 \
 	-Wno-unused-parameter
 #	-pedantic \
 #	-Wshadow \
-#	-Wstrict-prototypes \
 #	-Wstrict-overflow=5 \
 #	-Wwrite-strings \
 #	-Waggregate-return \
-#	-Wswitch-default \
 #	-Wswitch-enum
 
 SANITIZERS := -fsanitize=address,undefined

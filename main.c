@@ -364,6 +364,8 @@ void log_init(int argc, char **argv) {
     case 'd':
       dewlock_log_init(LOG_DEBUG);
       return;
+    default:
+      break;
     }
   }
   dewlock_log_init(LOG_ERROR);
