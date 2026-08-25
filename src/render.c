@@ -9,6 +9,7 @@
 
 static void surface_frame_handle_done(void *data, struct wl_callback *callback,
                                       uint32_t time) {
+  (void)time;
   struct dewlock_surface *surface = data;
 
   wl_callback_destroy(callback);
@@ -100,6 +101,8 @@ struct dewlock_text {
 static void init_text(cairo_t *cairo, double width, double y,
                       struct dewlock_text opts, const char *text,
                       cairo_text_extents_t *extents) {
+  (void)width;
+  (void)y;
   assert(extents && "extents must be non-null");
 
   static cairo_font_options_t *font_options = NULL;

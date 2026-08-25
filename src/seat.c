@@ -10,6 +10,7 @@
 
 static void keyboard_keymap(void *data, struct wl_keyboard *wl_keyboard,
                             uint32_t format, int32_t fd, uint32_t size) {
+  (void)wl_keyboard;
   struct dewlock_seat *seat = data;
   struct dewlock_state *state = seat->state;
 
@@ -57,11 +58,19 @@ static void stop_repeat(struct dewlock_seat *seat) {
 static void keyboard_enter(void *data, struct wl_keyboard *wl_keyboard,
                            uint32_t serial, struct wl_surface *surface,
                            struct wl_array *keys) {
+  (void)data;
+  (void)wl_keyboard;
+  (void)serial;
+  (void)surface;
+  (void)keys;
   // Who cares
 }
 
 static void keyboard_leave(void *data, struct wl_keyboard *wl_keyboard,
                            uint32_t serial, struct wl_surface *surface) {
+  (void)wl_keyboard;
+  (void)serial;
+  (void)surface;
   // When focus leaves (e.g. the compositor takes it away across a
   // suspend/DPMS transition) the protocol guarantees no release events for
   // currently-held keys, so an armed key-repeat would otherwise linger and
@@ -81,6 +90,9 @@ static void keyboard_repeat(void *data) {
 static void keyboard_key(void *data, struct wl_keyboard *wl_keyboard,
                          uint32_t serial, uint32_t time, uint32_t key,
                          uint32_t _key_state) {
+  (void)wl_keyboard;
+  (void)serial;
+  (void)time;
   struct dewlock_seat *seat = data;
   struct dewlock_state *state = seat->state;
   if (state->xkb.state == NULL) {
@@ -110,6 +122,8 @@ static void keyboard_modifiers(void *data, struct wl_keyboard *wl_keyboard,
                                uint32_t serial, uint32_t mods_depressed,
                                uint32_t mods_latched, uint32_t mods_locked,
                                uint32_t group) {
+  (void)wl_keyboard;
+  (void)serial;
   struct dewlock_seat *seat = data;
   struct dewlock_state *state = seat->state;
   if (state->xkb.state == NULL) {
@@ -133,6 +147,7 @@ static void keyboard_modifiers(void *data, struct wl_keyboard *wl_keyboard,
 
 static void keyboard_repeat_info(void *data, struct wl_keyboard *wl_keyboard,
                                  int32_t rate, int32_t delay) {
+  (void)wl_keyboard;
   struct dewlock_seat *seat = data;
   if (rate <= 0) {
     seat->repeat_period_ms = -1;
@@ -155,47 +170,84 @@ static const struct wl_keyboard_listener keyboard_listener = {
 static void wl_pointer_enter(void *data, struct wl_pointer *wl_pointer,
                              uint32_t serial, struct wl_surface *surface,
                              wl_fixed_t surface_x, wl_fixed_t surface_y) {
+  (void)data;
+  (void)surface;
+  (void)surface_x;
+  (void)surface_y;
   wl_pointer_set_cursor(wl_pointer, serial, NULL, 0, 0);
 }
 
 static void wl_pointer_leave(void *data, struct wl_pointer *wl_pointer,
                              uint32_t serial, struct wl_surface *surface) {
+  (void)data;
+  (void)wl_pointer;
+  (void)serial;
+  (void)surface;
   // Who cares
 }
 
 static void wl_pointer_motion(void *data, struct wl_pointer *wl_pointer,
                               uint32_t time, wl_fixed_t surface_x,
                               wl_fixed_t surface_y) {
+  (void)data;
+  (void)wl_pointer;
+  (void)time;
+  (void)surface_x;
+  (void)surface_y;
   // Who cares
 }
 
 static void wl_pointer_button(void *data, struct wl_pointer *wl_pointer,
                               uint32_t serial, uint32_t time, uint32_t button,
                               uint32_t state) {
+  (void)data;
+  (void)wl_pointer;
+  (void)serial;
+  (void)time;
+  (void)button;
+  (void)state;
   // Who cares
 }
 
 static void wl_pointer_axis(void *data, struct wl_pointer *wl_pointer,
                             uint32_t time, uint32_t axis, wl_fixed_t value) {
+  (void)data;
+  (void)wl_pointer;
+  (void)time;
+  (void)axis;
+  (void)value;
   // Who cares
 }
 
 static void wl_pointer_frame(void *data, struct wl_pointer *wl_pointer) {
+  (void)data;
+  (void)wl_pointer;
   // Who cares
 }
 
 static void wl_pointer_axis_source(void *data, struct wl_pointer *wl_pointer,
                                    uint32_t axis_source) {
+  (void)data;
+  (void)wl_pointer;
+  (void)axis_source;
   // Who cares
 }
 
 static void wl_pointer_axis_stop(void *data, struct wl_pointer *wl_pointer,
                                  uint32_t time, uint32_t axis) {
+  (void)data;
+  (void)wl_pointer;
+  (void)time;
+  (void)axis;
   // Who cares
 }
 
 static void wl_pointer_axis_discrete(void *data, struct wl_pointer *wl_pointer,
                                      uint32_t axis, int32_t discrete) {
+  (void)data;
+  (void)wl_pointer;
+  (void)axis;
+  (void)discrete;
   // Who cares
 }
 
@@ -234,6 +286,9 @@ static void seat_handle_capabilities(void *data, struct wl_seat *wl_seat,
 
 static void seat_handle_name(void *data, struct wl_seat *wl_seat,
                              const char *name) {
+  (void)data;
+  (void)wl_seat;
+  (void)name;
   // Who cares
 }
 

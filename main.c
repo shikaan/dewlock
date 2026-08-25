@@ -175,6 +175,14 @@ static void handle_wl_output_geometry(void *data, struct wl_output *wl_output,
                                       int32_t height_mm, int32_t subpixel,
                                       const char *make, const char *model,
                                       int32_t transform) {
+  (void)wl_output;
+  (void)x;
+  (void)y;
+  (void)width_mm;
+  (void)height_mm;
+  (void)make;
+  (void)model;
+  (void)transform;
   struct dewlock_surface *surface = data;
   surface->subpixel = subpixel;
   if (surface->state->run_display) {
@@ -186,10 +194,17 @@ static void handle_wl_output_geometry(void *data, struct wl_output *wl_output,
 static void handle_wl_output_mode(void *data, struct wl_output *output,
                                   uint32_t flags, int32_t width, int32_t height,
                                   int32_t refresh) {
+  (void)data;
+  (void)output;
+  (void)flags;
+  (void)width;
+  (void)height;
+  (void)refresh;
   // Who cares
 }
 
 static void handle_wl_output_done(void *data, struct wl_output *output) {
+  (void)output;
   struct dewlock_surface *surface = data;
   if (!surface->created && surface->state->run_display) {
     create_surface(surface);
@@ -198,6 +213,7 @@ static void handle_wl_output_done(void *data, struct wl_output *output) {
 
 static void handle_wl_output_scale(void *data, struct wl_output *output,
                                    int32_t factor) {
+  (void)output;
   struct dewlock_surface *surface = data;
   surface->scale = factor;
   if (surface->state->run_display) {
@@ -208,12 +224,16 @@ static void handle_wl_output_scale(void *data, struct wl_output *output,
 
 static void handle_wl_output_name(void *data, struct wl_output *output,
                                   const char *name) {
+  (void)output;
   struct dewlock_surface *surface = data;
   surface->output_name = strdup(name);
 }
 
 static void handle_wl_output_description(void *data, struct wl_output *output,
                                          const char *description) {
+  (void)data;
+  (void)output;
+  (void)description;
   // Who cares
 }
 
@@ -229,6 +249,7 @@ struct wl_output_listener _wl_output_listener = {
 static void
 ext_session_lock_v1_handle_locked(void *data,
                                   struct ext_session_lock_v1 *lock) {
+  (void)lock;
   struct dewlock_state *state = data;
   state->locked = true;
 }
@@ -236,6 +257,8 @@ ext_session_lock_v1_handle_locked(void *data,
 static void
 ext_session_lock_v1_handle_finished(void *data,
                                     struct ext_session_lock_v1 *lock) {
+  (void)data;
+  (void)lock;
   dewlock_log(LOG_ERROR, "Failed to lock session -- "
                          "is another lockscreen running?%s", "");
   exit(2);
@@ -250,6 +273,7 @@ static const struct ext_session_lock_v1_listener ext_session_lock_v1_listener =
 static void handle_global(void *data, struct wl_registry *registry,
                           uint32_t name, const char *interface,
                           uint32_t version) {
+  (void)version;
   struct dewlock_state *state = data;
   if (strcmp(interface, wl_compositor_interface.name) == 0) {
     state->compositor =
@@ -281,6 +305,7 @@ static void handle_global(void *data, struct wl_registry *registry,
 
 static void handle_global_remove(void *data, struct wl_registry *registry,
                                  uint32_t name) {
+  (void)registry;
   struct dewlock_state *state = data;
   struct dewlock_surface *surface;
   wl_list_for_each(surface, &state->surfaces, link) {
@@ -298,7 +323,10 @@ static const struct wl_registry_listener registry_listener = {
 
 static int sigusr_fds[2] = {-1, -1};
 
-void do_sigusr(int sig) { (void)write(sigusr_fds[1], "1", 1); }
+void do_sigusr(int sig) {
+  (void)sig;
+  (void)write(sigusr_fds[1], "1", 1);
+}
 
 static cairo_surface_t *select_image(struct dewlock_state *state,
                                      struct dewlock_surface *surface) {
@@ -315,12 +343,17 @@ static cairo_surface_t *select_image(struct dewlock_state *state,
 }
 
 static void display_in(int fd, short mask, void *data) {
+  (void)fd;
+  (void)mask;
+  (void)data;
   if (wl_display_dispatch(g_state.display) == -1) {
     g_state.run_display = false;
   }
 }
 
 static void comm_in(int fd, short mask, void *data) {
+  (void)fd;
+  (void)data;
   if (mask & POLLIN) {
     bool auth_success = false;
     if (!read_comm_reply(&auth_success)) {
@@ -342,6 +375,9 @@ static void comm_in(int fd, short mask, void *data) {
 }
 
 static void term_in(int fd, short mask, void *data) {
+  (void)fd;
+  (void)mask;
+  (void)data;
   g_state.run_display = false;
 }
 

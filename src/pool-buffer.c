@@ -37,6 +37,7 @@ static int anonymous_shm_open(void) {
 }
 
 static void buffer_release(void *data, struct wl_buffer *wl_buffer) {
+  (void)wl_buffer;
   struct pool_buffer *buffer = data;
   buffer->busy = false;
 }
