@@ -78,7 +78,7 @@ conf_data = configuration_data()
 conf_data.set_quoted('SYSCONFDIR', get_option('prefix') / get_option('sysconfdir'))
 conf_data.set_quoted('DEWLOCK_VERSION', version)
 
-subdir('include')
+subdir('src')
 
 dependencies = [
 	cairo,
@@ -89,34 +89,34 @@ dependencies = [
 ]
 
 sources = [
-	'background-image.c',
-	'clock.c',
-	'cairo.c',
-	'comm.c',
-	'configuration.c',
-	'log.c',
-	'loop.c',
 	'main.c',
-	'password.c',
-	'password-buffer.c',
-	'pool-buffer.c',
-	'render.c',
-	'seat.c',
-	'unicode.c',
+	'src/background-image.c',
+	'src/cairo.c',
+	'src/clock.c',
+	'src/comm.c',
+	'src/configuration.c',
+	'src/log.c',
+	'src/loop.c',
+	'src/password-buffer.c',
+	'src/password.c',
+	'src/pool-buffer.c',
+	'src/render.c',
+	'src/seat.c',
+	'src/unicode.c',
 ]
 
 if libpam.found()
-	sources += ['pam.c']
+	sources += ['src/pam.c']
 	dependencies += [libpam]
 else
 	warning('The dewlock binary often needs to be setuid when compiled without libpam')
 	warning('You must do this manually post-install: chmod a+s /path/to/dewlock')
 	warning('See the "Without PAM" section of the README for details.')
-	sources += ['shadow.c']
+	sources += ['src/shadow.c']
 	dependencies += [crypt]
 endif
 
-dewlock_inc = include_directories('include')
+dewlock_inc = include_directories('src')
 
 executable('dewlock',
 	sources + protos_src,
