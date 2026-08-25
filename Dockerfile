@@ -11,8 +11,6 @@ run apt install -y \
   libxkbcommon-dev \
   libwayland-dev \
   libcairo2-dev \
-  libgdk-pixbuf-2.0-dev \
-  libjson-c-dev \
   libcrypt-dev \
   libpam0g-dev
 
