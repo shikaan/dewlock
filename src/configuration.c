@@ -229,7 +229,7 @@ char *get_config_path(void) {
 int load_config(char *path, struct dewlock_state *state) {
   FILE *config = fopen(path, "r");
   if (!config) {
-    dewlock_log(LOG_ERROR, "Failed to read config. Running without it.");
+    dewlock_log(LOG_ERROR, "Failed to read config. Running without it.%s", "");
     return 0;
   }
   char *line = NULL;
@@ -250,7 +250,7 @@ int load_config(char *path, struct dewlock_state *state) {
     dewlock_log(LOG_DEBUG, "Config Line #%d: %s", line_number, line);
     char *separator = strchr(line, CONFIG_VALUE_SEPARATOR);
     if (!separator) {
-      dewlock_log(LOG_ERROR, "Invalid config line. Skipping.");
+      dewlock_log(LOG_ERROR, "Invalid config line. Skipping.%s", "");
       continue;
     }
 
@@ -259,7 +259,7 @@ int load_config(char *path, struct dewlock_state *state) {
 
     char *dot = strchr(line, CONFIG_NAMESPACE_SEPARATOR);
     if (!dot) {
-      dewlock_log(LOG_ERROR, "Invalid config line. Skipping.");
+      dewlock_log(LOG_ERROR, "Invalid config line. Skipping.%s", "");
       continue;
     }
     *dot = '\0';

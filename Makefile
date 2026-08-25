@@ -22,12 +22,11 @@ COMMON_CFLAGS := -std=c11 \
 	-Waggregate-return \
 	-Wstrict-overflow=5 \
 	-Wwrite-strings \
+	-Wshadow \
+	-pedantic \
 	-Wno-conversion \
 	-Wno-sign-conversion \
-	-Wno-ignored-qualifiers \
-	-Wno-unused-parameter
-#	-pedantic \
-#	-Wshadow
+	-Wno-ignored-qualifiers
 
 SANITIZERS := -fsanitize=address,undefined
 
