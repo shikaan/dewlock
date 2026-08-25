@@ -23,12 +23,12 @@ enum input_state {
 // FIXME: this should divide runtime configuration from CLI options
 struct dewlock_args {
   struct {
-		uint32_t background; // used when image is not specified
-		uint32_t overlay;
-		uint32_t text;
-		uint32_t warning;
-		uint32_t error;
-	} colors;
+    uint32_t background; // used when image is not specified
+    uint32_t overlay;
+    uint32_t text;
+    uint32_t warning;
+    uint32_t error;
+  } colors;
   struct {
     char *path;
     enum background_mode mode;
@@ -49,8 +49,8 @@ struct dewlock_string {
 
 struct dewlock_state {
   struct loop *eventloop;
-  struct loop_timer *input_idle_timer; // timer to reset input state to IDLE
-  struct loop_timer *auth_idle_timer; // timer to stop displaying error
+  struct loop_timer *input_idle_timer;     // timer to reset input state to IDLE
+  struct loop_timer *auth_idle_timer;      // timer to stop displaying error
   struct loop_timer *clear_password_timer; // clears the password buffer
   struct loop_timer *clock_timer;
   struct wl_display *display;
@@ -61,9 +61,9 @@ struct dewlock_state {
   struct wl_list images;
   struct dewlock_args args;
   struct dewlock_string password;
-  char* username;
-  char* time;
-  char* date;
+  char *username;
+  char *time;
+  char *date;
   struct dewlock_xkb xkb;
   enum auth_state auth_state;   // state of the authentication attempt
   enum input_state input_state; // state of the password buffer and key inputs
@@ -104,7 +104,7 @@ struct dewlock_image {
 };
 
 void dewlock_handle_key(struct dewlock_state *state, xkb_keysym_t keysym,
-                         uint32_t codepoint);
+                        uint32_t codepoint);
 
 void render(struct dewlock_surface *surface);
 void damage_state(struct dewlock_state *state);

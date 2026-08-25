@@ -30,7 +30,7 @@ void loop_poll(struct loop *loop);
  * Add a file descriptor to the loop.
  */
 void loop_add_fd(struct loop *loop, int fd, short mask,
-		void (*func)(int fd, short mask, void *data), void *data);
+                 void (*func)(int fd, short mask, void *data), void *data);
 
 /**
  * Add a timer to the loop.
@@ -38,7 +38,7 @@ void loop_add_fd(struct loop *loop, int fd, short mask,
  * When the timer expires, the timer will be removed from the loop and freed.
  */
 struct loop_timer *loop_add_timer(struct loop *loop, int ms,
-		void (*callback)(void *data), void *data);
+                                  void (*callback)(void *data), void *data);
 
 /**
  * Remove a file descriptor from the loop.

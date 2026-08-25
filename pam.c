@@ -1,148 +1,149 @@
 #define _POSIX_C_SOURCE 200809L
+#include "comm.h"
+#include "dewlock.h"
+#include "log.h"
+#include "password-buffer.h"
 #include <pwd.h>
 #include <security/pam_appl.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "comm.h"
-#include "log.h"
-#include "password-buffer.h"
-#include "dewlock.h"
 
 void initialize_pw_backend(int argc, char **argv) {
-	if (getuid() != geteuid() || getgid() != getegid()) {
-		dewlock_log(LOG_ERROR,
-			"dewlock is setuid, but was compiled with the PAM"
-			" backend. Run 'chmod a-s %s' to fix. Aborting.", argv[0]);
-		exit(EXIT_FAILURE);
-	}
-	if (!spawn_comm_child()) {
-		exit(EXIT_FAILURE);
-	}
+  if (getuid() != geteuid() || getgid() != getegid()) {
+    dewlock_log(LOG_ERROR,
+                "dewlock is setuid, but was compiled with the PAM"
+                " backend. Run 'chmod a-s %s' to fix. Aborting.",
+                argv[0]);
+    exit(EXIT_FAILURE);
+  }
+  if (!spawn_comm_child()) {
+    exit(EXIT_FAILURE);
+  }
 }
 
 struct conv_state {
-	char *password;
+  char *password;
 };
 
 static int handle_conversation(int num_msg, const struct pam_message **msg,
-		struct pam_response **resp, void *data) {
-	struct conv_state *state = data;
+                               struct pam_response **resp, void *data) {
+  struct conv_state *state = data;
 
-	/* PAM expects an array of responses, one for each message */
-	struct pam_response *pam_reply =
-		calloc(num_msg, sizeof(struct pam_response));
-	if (pam_reply == NULL) {
-		dewlock_log(LOG_ERROR, "Allocation failed");
-		return PAM_ABORT;
-	}
-	*resp = pam_reply;
-	for (int i = 0; i < num_msg; ++i) {
-		switch (msg[i]->msg_style) {
-		case PAM_PROMPT_ECHO_OFF:
-		case PAM_PROMPT_ECHO_ON:
-			/* workaround pam_systemd_home internal retries:
-			 * https://github.com/systemd/systemd/blob/main/src/home/pam_systemd_home.c#L594-L599
-			 * if the password has already been rejected once, abort the conversation */
-			if (state->password == NULL) {
-				return PAM_ABORT;
-			}
-			pam_reply[i].resp = strdup(state->password); // PAM clears and frees this
-			if (pam_reply[i].resp == NULL) {
-				dewlock_log(LOG_ERROR, "Allocation failed");
-				return PAM_ABORT;
-			}
-			state->password = NULL;
-			break;
-		case PAM_ERROR_MSG:
-		case PAM_TEXT_INFO:
-			break;
-		}
-	}
-	return PAM_SUCCESS;
+  /* PAM expects an array of responses, one for each message */
+  struct pam_response *pam_reply = calloc(num_msg, sizeof(struct pam_response));
+  if (pam_reply == NULL) {
+    dewlock_log(LOG_ERROR, "Allocation failed");
+    return PAM_ABORT;
+  }
+  *resp = pam_reply;
+  for (int i = 0; i < num_msg; ++i) {
+    switch (msg[i]->msg_style) {
+    case PAM_PROMPT_ECHO_OFF:
+    case PAM_PROMPT_ECHO_ON:
+      /* workaround pam_systemd_home internal retries:
+       * https://github.com/systemd/systemd/blob/main/src/home/pam_systemd_home.c#L594-L599
+       * if the password has already been rejected once, abort the conversation
+       */
+      if (state->password == NULL) {
+        return PAM_ABORT;
+      }
+      pam_reply[i].resp = strdup(state->password); // PAM clears and frees this
+      if (pam_reply[i].resp == NULL) {
+        dewlock_log(LOG_ERROR, "Allocation failed");
+        return PAM_ABORT;
+      }
+      state->password = NULL;
+      break;
+    case PAM_ERROR_MSG:
+    case PAM_TEXT_INFO:
+      break;
+    }
+  }
+  return PAM_SUCCESS;
 }
 
 static const char *get_pam_auth_error(int pam_status) {
-	switch (pam_status) {
-	case PAM_AUTH_ERR:
-		return "invalid credentials";
-	case PAM_CRED_INSUFFICIENT:
-		return "dewlock cannot authenticate users; check /etc/pam.d/dewlock "
-			"has been installed properly";
-	case PAM_AUTHINFO_UNAVAIL:
-		return "authentication information unavailable";
-	case PAM_MAXTRIES:
-		return "maximum number of authentication tries exceeded";
-	default:;
-		static char msg[64];
-		snprintf(msg, sizeof(msg), "unknown error (%d)", pam_status);
-		return msg;
-	}
+  switch (pam_status) {
+  case PAM_AUTH_ERR:
+    return "invalid credentials";
+  case PAM_CRED_INSUFFICIENT:
+    return "dewlock cannot authenticate users; check /etc/pam.d/dewlock "
+           "has been installed properly";
+  case PAM_AUTHINFO_UNAVAIL:
+    return "authentication information unavailable";
+  case PAM_MAXTRIES:
+    return "maximum number of authentication tries exceeded";
+  default:;
+    static char msg[64];
+    snprintf(msg, sizeof(msg), "unknown error (%d)", pam_status);
+    return msg;
+  }
 }
 
 void run_pw_backend_child(void) {
-	char *pw_buf = NULL;
-	struct passwd *passwd = getpwuid(getuid());
-	if (!passwd) {
-		dewlock_log_errno(LOG_ERROR, "getpwuid failed");
-		exit(EXIT_FAILURE);
-	}
+  char *pw_buf = NULL;
+  struct passwd *passwd = getpwuid(getuid());
+  if (!passwd) {
+    dewlock_log_errno(LOG_ERROR, "getpwuid failed");
+    exit(EXIT_FAILURE);
+  }
 
-	char *username = passwd->pw_name;
+  char *username = passwd->pw_name;
 
-	struct conv_state state = {0};
-	const struct pam_conv conv = {
-		.conv = handle_conversation,
-		.appdata_ptr = &state,
-	};
-	pam_handle_t *auth_handle = NULL;
-	if (pam_start("dewlock", username, &conv, &auth_handle) != PAM_SUCCESS) {
-		dewlock_log(LOG_ERROR, "pam_start failed");
-		exit(EXIT_FAILURE);
-	}
+  struct conv_state state = {0};
+  const struct pam_conv conv = {
+      .conv = handle_conversation,
+      .appdata_ptr = &state,
+  };
+  pam_handle_t *auth_handle = NULL;
+  if (pam_start("dewlock", username, &conv, &auth_handle) != PAM_SUCCESS) {
+    dewlock_log(LOG_ERROR, "pam_start failed");
+    exit(EXIT_FAILURE);
+  }
 
-	/* This code does not run as root */
-	dewlock_log(LOG_DEBUG, "Prepared to authorize user %s", username);
+  /* This code does not run as root */
+  dewlock_log(LOG_DEBUG, "Prepared to authorize user %s", username);
 
-	int pam_status = PAM_SUCCESS;
-	while (1) {
-		ssize_t size = read_comm_request(&pw_buf);
-		if (size < 0) {
-			exit(EXIT_FAILURE);
-		} else if (size == 0) {
-			break;
-		}
+  int pam_status = PAM_SUCCESS;
+  while (1) {
+    ssize_t size = read_comm_request(&pw_buf);
+    if (size < 0) {
+      exit(EXIT_FAILURE);
+    } else if (size == 0) {
+      break;
+    }
 
-		state.password = pw_buf;
-		int pam_status = pam_authenticate(auth_handle, 0);
-		password_buffer_destroy(pw_buf, size);
-		pw_buf = NULL;
-		state.password = NULL;
+    state.password = pw_buf;
+    int pam_status = pam_authenticate(auth_handle, 0);
+    password_buffer_destroy(pw_buf, size);
+    pw_buf = NULL;
+    state.password = NULL;
 
-		bool success = pam_status == PAM_SUCCESS;
-		if (!success) {
-			dewlock_log(LOG_ERROR, "pam_authenticate failed: %s",
-				get_pam_auth_error(pam_status));
-		}
+    bool success = pam_status == PAM_SUCCESS;
+    if (!success) {
+      dewlock_log(LOG_ERROR, "pam_authenticate failed: %s",
+                  get_pam_auth_error(pam_status));
+    }
 
-		if (!write_comm_reply(success)) {
-			exit(EXIT_FAILURE);
-		}
+    if (!write_comm_reply(success)) {
+      exit(EXIT_FAILURE);
+    }
 
-		if (success) {
-			/* Unsuccessful requests may be queued after a successful one;
-			 * do not process them. */
-			break;
-		}
-	}
+    if (success) {
+      /* Unsuccessful requests may be queued after a successful one;
+       * do not process them. */
+      break;
+    }
+  }
 
-	pam_setcred(auth_handle, PAM_REFRESH_CRED);
+  pam_setcred(auth_handle, PAM_REFRESH_CRED);
 
-	if (pam_end(auth_handle, pam_status) != PAM_SUCCESS) {
-		dewlock_log(LOG_ERROR, "pam_end failed");
-		exit(EXIT_FAILURE);
-	}
+  if (pam_end(auth_handle, pam_status) != PAM_SUCCESS) {
+    dewlock_log(LOG_ERROR, "pam_end failed");
+    exit(EXIT_FAILURE);
+  }
 
-	exit((pam_status == PAM_SUCCESS) ? EXIT_SUCCESS : EXIT_FAILURE);
+  exit((pam_status == PAM_SUCCESS) ? EXIT_SUCCESS : EXIT_FAILURE);
 }

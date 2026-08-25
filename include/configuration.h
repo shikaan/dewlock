@@ -7,7 +7,7 @@
 // pass that applies the remaining CLI flags on top of it.
 // Returns 0 on success, or a value the caller should return from main.
 int parse_cli_args(int argc, char **argv, struct dewlock_state *state,
-                    char **config_path);
+                   char **config_path);
 
 // Resolves the config file path from the well-known locations
 // ($HOME/.dewlock/config, $XDG_CONFIG_HOME/dewlock/config, SYSCONFDIR).

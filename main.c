@@ -3,13 +3,13 @@
 #include "clock.h"
 #include "comm.h"
 #include "configuration.h"
+#include "dewlock.h"
 #include "ext-session-lock-v1-client-protocol.h"
 #include "log.h"
 #include "loop.h"
 #include "password-buffer.h"
 #include "pool-buffer.h"
 #include "seat.h"
-#include "dewlock.h"
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -27,8 +27,6 @@
 #include <unistd.h>
 #include <wayland-client.h>
 
-// This intentionally leaks memory (in the asan sense).
-// Its life is bound the the applications, no point in freeing it.
 static struct dewlock_state state;
 
 static const struct ext_session_lock_surface_v1_listener
@@ -239,7 +237,7 @@ static void
 ext_session_lock_v1_handle_finished(void *data,
                                     struct ext_session_lock_v1 *lock) {
   dewlock_log(LOG_ERROR, "Failed to lock session -- "
-                          "is another lockscreen running?");
+                         "is another lockscreen running?");
   exit(2);
 }
 
@@ -264,13 +262,11 @@ static void handle_global(void *data, struct wl_registry *registry,
   } else if (strcmp(interface, wl_seat_interface.name) == 0) {
     struct wl_seat *seat =
         wl_registry_bind(registry, name, &wl_seat_interface, 4);
-    struct dewlock_seat *dewlock_seat =
-        calloc(1, sizeof(struct dewlock_seat));
+    struct dewlock_seat *dewlock_seat = calloc(1, sizeof(struct dewlock_seat));
     dewlock_seat->state = state;
     wl_seat_add_listener(seat, &seat_listener, dewlock_seat);
   } else if (strcmp(interface, wl_output_interface.name) == 0) {
-    struct dewlock_surface *surface =
-        calloc(1, sizeof(struct dewlock_surface));
+    struct dewlock_surface *surface = calloc(1, sizeof(struct dewlock_surface));
     surface->state = state;
     surface->output = wl_registry_bind(registry, name, &wl_output_interface, 4);
     surface->output_global_name = name;
@@ -446,8 +442,8 @@ int main(int argc, char **argv) {
   state.display = wl_display_connect(NULL);
   if (!state.display) {
     dewlock_log(LOG_ERROR, "Unable to connect to the compositor. "
-                            "If your compositor is running, check or set the "
-                            "WAYLAND_DISPLAY environment variable.");
+                           "If your compositor is running, check or set the "
+                           "WAYLAND_DISPLAY environment variable.");
     return EXIT_FAILURE;
   }
   state.eventloop = loop_create();

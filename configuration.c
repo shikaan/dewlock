@@ -83,7 +83,7 @@ void load_image(struct dewlock_state *state) {
     if (lenient_strcmp(iter_image->output_name, image->output_name) == 0) {
       if (image->output_name) {
         dewlock_log(LOG_DEBUG, "Replacing image defined for output %s with %s",
-                     image->output_name, image->path);
+                    image->output_name, image->path);
       } else {
         dewlock_log(LOG_DEBUG, "Replacing default image with %s", image->path);
       }
@@ -120,11 +120,11 @@ void load_image(struct dewlock_state *state) {
   }
   wl_list_insert(&state->images, &image->link);
   dewlock_log(LOG_DEBUG, "Loaded image %s for output %s", image->path,
-               image->output_name ? image->output_name : "*");
+              image->output_name ? image->output_name : "*");
 }
 
 int parse_cli_args(int argc, char **argv, struct dewlock_state *state,
-                    char **config_path) {
+                   char **config_path) {
   static struct option long_options[] = {
       {"config", required_argument, NULL, 'c'},
       {"debug", no_argument, NULL, 'd'},

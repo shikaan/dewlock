@@ -1,7 +1,7 @@
 #include "comm.h"
+#include "dewlock.h"
 #include "loop.h"
 #include "seat.h"
-#include "dewlock.h"
 #include "unicode.h"
 #include <assert.h>
 #include <pwd.h>
@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <xkbcommon/xkbcommon.h>
 
-// FIXME: rearrange code around password and its buffer. 
+// FIXME: rearrange code around password and its buffer.
 //        This function could be in password-buffer
 void clear_password_buffer(struct dewlock_string *pw) {
   memset(pw->buf, 0, pw->cap);
@@ -101,10 +101,11 @@ static void submit_password(struct dewlock_state *state) {
 }
 
 void dewlock_handle_key(struct dewlock_state *state, xkb_keysym_t keysym,
-                         uint32_t codepoint) {
+                        uint32_t codepoint) {
 
-	// Do not accept inputs while validating
-	if (state->auth_state == AUTH_STATE_VALIDATING) return;
+  // Do not accept inputs while validating
+  if (state->auth_state == AUTH_STATE_VALIDATING)
+    return;
 
   switch (keysym) {
   case XKB_KEY_KP_Enter: /* fallthrough */
@@ -165,9 +166,9 @@ void dewlock_handle_key(struct dewlock_state *state, xkb_keysym_t keysym,
     // fallthrough
   default:
     if (codepoint) {
-			if (state->auth_state == AUTH_STATE_INVALID) {
-				state->auth_state = AUTH_STATE_IDLE;
-			}
+      if (state->auth_state == AUTH_STATE_INVALID) {
+        state->auth_state = AUTH_STATE_IDLE;
+      }
       append_ch(&state->password, codepoint);
       state->input_state = INPUT_STATE_DIRTY;
       schedule_password_clear(state);
