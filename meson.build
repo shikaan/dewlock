@@ -42,11 +42,15 @@ scdoc = find_program('scdoc', required: get_option('man-pages'))
 wayland_scanner_prog = find_program(wayland_scanner.get_variable('wayland_scanner'), native: true)
 
 version = meson.project_version()
+sha = 'dev'
 if git.found()
-	git_commit_hash = run_command([git, 'describe', '--always', '--tags'], check: false)
-	git_branch = run_command([git, 'rev-parse', '--abbrev-ref', 'HEAD'], check: false)
-	if git_commit_hash.returncode() == 0 and git_branch.returncode() == 0
-		version = '@0@ (" __DATE__ ", branch \'@1@\')'.format(git_commit_hash.stdout().strip(), git_branch.stdout().strip())
+	git_describe = run_command([git, 'describe', '--always', '--tags'], check: false)
+	git_sha = run_command([git, 'rev-parse', '--short', 'HEAD'], check: false)
+	if git_describe.returncode() == 0
+		version = git_describe.stdout().strip()
+	endif
+	if git_sha.returncode() == 0
+		sha = git_sha.stdout().strip()
 	endif
 endif
 
@@ -74,11 +78,11 @@ foreach xml : client_protocols
 	protos_src += wayland_scanner_client.process(xml)
 endforeach
 
-conf_data = configuration_data()
-conf_data.set_quoted('SYSCONFDIR', get_option('prefix') / get_option('sysconfdir'))
-conf_data.set_quoted('DEWLOCK_VERSION', version)
-
-subdir('src')
+add_project_arguments([
+	'-DVERSION="@0@"'.format(version),
+	'-DSHA="@0@"'.format(sha),
+	'-DSYSCONFDIR="@0@"'.format(get_option('prefix') / get_option('sysconfdir')),
+], language: 'c')
 
 dependencies = [
 	cairo,
