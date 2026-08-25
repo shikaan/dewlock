@@ -9,6 +9,10 @@
 #include <unistd.h>
 #include <wordexp.h>
 
+#ifndef SYSCONFDIR
+#define SYSCONFDIR "/etc"
+#endif
+
 #define CONFIG_VALUE_SEPARATOR '='
 #define CONFIG_NAMESPACE_SEPARATOR '.'
 #define CONFIG_COMMENT '#'
@@ -177,7 +181,8 @@ int parse_cli_args(int argc, char **argv, struct dewlock_state *state,
       }
       break;
     case 'v':
-      fprintf(stdout, "dewlock version " DEWLOCK_VERSION "\n");
+      // VERSION and SHA come from CFLAGS as -DVERSION -DSHA
+      fprintf(stdout, "dewlock version %s (%s)\n", VERSION, SHA);
       exit(EXIT_SUCCESS);
       break;
     default:

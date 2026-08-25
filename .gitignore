@@ -2,4 +2,10 @@ build
 .todo
 .nvim.lua
 
+**/*.o
+main
+
+protocols/*.h
+protocols/*.c
+
 docs

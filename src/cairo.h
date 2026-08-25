@@ -1,6 +1,5 @@
 #pragma once
 
-#include "config.h"
 #include <cairo/cairo.h>
 #include <stdint.h>
 #include <wayland-client.h>
