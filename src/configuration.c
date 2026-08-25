@@ -37,7 +37,7 @@ static uint32_t parse_color(const char *color) {
     ++color;
   }
 
-  int len = strlen(color);
+  int len = (int)strlen(color);
   if (len != 6 && len != 8) {
     dewlock_log(LOG_DEBUG, "Invalid color %s, defaulting to white", color);
     return 0xFFFFFFFF;
@@ -51,7 +51,8 @@ static uint32_t parse_color(const char *color) {
 
 static char *join_args(char **argv, int argc) {
   assert(argc > 0);
-  int len = 0, i;
+  size_t len = 0;
+  int i;
   for (i = 0; i < argc; ++i) {
     len += strlen(argv[i]) + 1;
   }
@@ -112,7 +113,7 @@ void load_image(struct dewlock_state *state) {
   }
   if (wordexp(image->path, &p, 0) == 0) {
     free(image->path);
-    image->path = join_args(p.we_wordv, p.we_wordc);
+    image->path = join_args(p.we_wordv, (int)p.we_wordc);
     wordfree(&p);
   }
 
@@ -177,7 +178,7 @@ int parse_cli_args(int argc, char **argv, struct dewlock_state *state,
       break;
     case 'r':
       if (state) {
-        state->args.ready_fd = strtol(optarg, NULL, 10);
+        state->args.ready_fd = (int)strtol(optarg, NULL, 10);
       }
       break;
     case 'v':
@@ -287,7 +288,7 @@ int load_config(char *path, struct dewlock_state *state) {
       }
 
       if (!strcmp(key, CONFIG_FONT_SIZE)) {
-        state->args.font.size = atoi(value);
+        state->args.font.size = (uint32_t)atoi(value);
         continue;
       }
     }

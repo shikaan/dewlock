@@ -410,7 +410,7 @@ void log_init(int argc, char **argv) {
 int main(int argc, char **argv) {
   log_init(argc, argv);
   initialize_pw_backend(argc, argv);
-  srand(time(NULL));
+  srand((unsigned int)time(NULL));
 
   g_state.failed_attempts = 0;
   g_state.args = (struct dewlock_args){

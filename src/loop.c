@@ -40,7 +40,7 @@ struct loop *loop_create(void) {
     return NULL;
   }
   loop->fd_capacity = 10;
-  loop->fds = malloc(sizeof(struct pollfd) * loop->fd_capacity);
+  loop->fds = malloc(sizeof(struct pollfd) * (size_t)loop->fd_capacity);
   wl_list_init(&loop->fd_events);
   wl_list_init(&loop->timers);
   return loop;
@@ -69,8 +69,8 @@ void loop_poll(struct loop *loop) {
     clock_gettime(CLOCK_MONOTONIC, &now);
     struct loop_timer *timer = NULL;
     wl_list_for_each(timer, &loop->timers, link) {
-      int timer_ms = (timer->expiry.tv_sec - now.tv_sec) * 1000;
-      timer_ms += (timer->expiry.tv_nsec - now.tv_nsec) / 1000000;
+      int timer_ms = (int)((timer->expiry.tv_sec - now.tv_sec) * 1000);
+      timer_ms += (int)((timer->expiry.tv_nsec - now.tv_nsec) / 1000000);
       if (timer_ms < ms) {
         ms = timer_ms;
       }
@@ -80,7 +80,7 @@ void loop_poll(struct loop *loop) {
     ms = 0;
   }
 
-  int ret = poll(loop->fds, loop->fd_length, ms);
+  int ret = poll(loop->fds, (nfds_t)loop->fd_length, ms);
   if (ret < 0 && errno != EINTR) {
     dewlock_log_errno(LOG_ERROR, "poll failed%s", "");
     exit(1);
@@ -93,9 +93,9 @@ void loop_poll(struct loop *loop) {
     struct pollfd pfd = loop->fds[fd_index];
 
     // Always send these events
-    unsigned events = pfd.events | POLLHUP | POLLERR;
+    unsigned events = (unsigned)pfd.events | POLLHUP | POLLERR;
 
-    if (pfd.revents & events) {
+    if ((unsigned)pfd.revents & events) {
       event->callback(pfd.fd, pfd.revents, event->data);
     }
 
@@ -141,7 +141,8 @@ void loop_add_fd(struct loop *loop, int fd, short mask,
 
   if (loop->fd_length == loop->fd_capacity) {
     loop->fd_capacity += 10;
-    loop->fds = realloc(loop->fds, sizeof(struct pollfd) * loop->fd_capacity);
+    loop->fds =
+        realloc(loop->fds, sizeof(struct pollfd) * (size_t)loop->fd_capacity);
   }
 
   loop->fds[loop->fd_length++] = pfd;
@@ -182,7 +183,7 @@ bool loop_remove_fd(struct loop *loop, int fd) {
 
       loop->fd_length--;
       memmove(&loop->fds[fd_index], &loop->fds[fd_index + 1],
-              sizeof(struct pollfd) * (loop->fd_length - fd_index));
+              sizeof(struct pollfd) * ((size_t)loop->fd_length - fd_index));
       return true;
     }
     ++fd_index;
