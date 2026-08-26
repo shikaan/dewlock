@@ -24,7 +24,7 @@ static void keyboard_keymap(void *data, struct wl_keyboard *wl_keyboard,
     char *map_shm = mmap(NULL, size - 1, PROT_READ, MAP_PRIVATE, fd, 0);
     if (map_shm == MAP_FAILED) {
       close(fd);
-      dewlock_log(LOG_ERROR, "Unable to initialize keymap shm, aborting%s", "");
+      log_error("Unable to initialize keymap shm, aborting", NULL);
       exit(1);
     }
     keymap = xkb_keymap_new_from_buffer(state->xkb.context, map_shm, size - 1,

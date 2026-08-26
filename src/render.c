@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <wayland-client.h>
 
 static void surface_frame_handle_done(void *data, struct wl_callback *callback,
@@ -49,8 +50,7 @@ void render(struct dewlock_surface *surface) {
     need_destroy = true;
     if (!create_buffer(state->shm, &buffer, buffer_width, buffer_height,
                        WL_SHM_FORMAT_ARGB8888)) {
-      dewlock_log(LOG_ERROR,
-                  "Failed to create new buffer for frame background.%s", "");
+      log_error("Failed to create new buffer for frame background.", NULL);
       return;
     }
 
@@ -282,7 +282,7 @@ static bool render_frame(struct dewlock_surface *surface) {
       get_next_buffer(state->shm, surface->indicator_buffers,
                       (uint32_t)buffer_width, (uint32_t)buffer_height);
   if (buffer == NULL) {
-    dewlock_log(LOG_ERROR, "No buffer%s", "");
+    log_error("No buffer", NULL);
     return false;
   }
 

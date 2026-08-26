@@ -1,5 +1,6 @@
 #include "loop.h"
 #include "log.h"
+#include <errno.h>
 #include <limits.h>
 #include <poll.h>
 #include <stdbool.h>
@@ -36,7 +37,7 @@ struct loop {
 struct loop *loop_create(void) {
   struct loop *loop = calloc(1, sizeof(struct loop));
   if (!loop) {
-    dewlock_log(LOG_ERROR, "Unable to allocate memory for loop%s", "");
+    log_error("Unable to allocate memory for loop", NULL);
     return NULL;
   }
   loop->fd_capacity = 10;
@@ -82,7 +83,7 @@ void loop_poll(struct loop *loop) {
 
   int ret = poll(loop->fds, (nfds_t)loop->fd_length, ms);
   if (ret < 0 && errno != EINTR) {
-    dewlock_log_errno(LOG_ERROR, "poll failed%s", "");
+    log_error("poll failed: %s", strerror(errno));
     exit(1);
   }
 
@@ -130,7 +131,7 @@ void loop_add_fd(struct loop *loop, int fd, short mask,
                  void (*callback)(int fd, short mask, void *data), void *data) {
   struct loop_fd_event *event = calloc(1, sizeof(struct loop_fd_event));
   if (!event) {
-    dewlock_log(LOG_ERROR, "Unable to allocate memory for event%s", "");
+    log_error("Unable to allocate memory for event", NULL);
     return;
   }
   event->callback = callback;
@@ -152,7 +153,7 @@ struct loop_timer *loop_add_timer(struct loop *loop, int ms,
                                   void (*callback)(void *data), void *data) {
   struct loop_timer *timer = calloc(1, sizeof(struct loop_timer));
   if (!timer) {
-    dewlock_log(LOG_ERROR, "Unable to allocate memory for timer%s", "");
+    log_error("Unable to allocate memory for timer", NULL);
     return NULL;
   }
   timer->callback = callback;

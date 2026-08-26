@@ -36,7 +36,7 @@ static const struct ext_session_lock_surface_v1_listener
 static void daemonize(void) {
   int fds[2];
   if (pipe(fds) != 0) {
-    dewlock_log(LOG_ERROR, "Failed to pipe%s", "");
+    log_error("Failed to pipe", NULL);
     exit(1);
   }
   if (fork() == 0) {
@@ -60,7 +60,7 @@ static void daemonize(void) {
     close(fds[1]);
     uint8_t success;
     if (read(fds[0], &success, 1) != 1 || !success) {
-      dewlock_log(LOG_ERROR, "Failed to daemonize%s", "");
+      log_error("Failed to daemonize", NULL);
       exit(1);
     }
     close(fds[0]);
@@ -251,8 +251,8 @@ ext_session_lock_v1_handle_finished(void *data,
                                     struct ext_session_lock_v1 *lock) {
   (void)data;
   (void)lock;
-  dewlock_log(LOG_ERROR, "Failed to lock session -- "
-                         "is another lockscreen running?%s", "");
+  log_error("Failed to lock session -- "
+            "is another lockscreen running?", NULL);
   exit(2);
 }
 
@@ -361,7 +361,7 @@ static void comm_in(int fd, short mask, void *data) {
       damage_state(&g_state);
     }
   } else if (mask & (POLLHUP | POLLERR)) {
-    dewlock_log(LOG_ERROR, "Password checking subprocess crashed; exiting.%s", "");
+    log_error("Password checking subprocess crashed; exiting.", NULL);
     exit(EXIT_FAILURE);
   }
 }
@@ -380,7 +380,7 @@ int main(int argc, char **argv) {
   cli_parse(argc, argv);
   cli_opts_t *opts;
   cli_get(&opts);
-  dewlock_log_init(opts->debug ? LOG_DEBUG : LOG_ERROR);
+  log_init(opts->debug ? LOG_LEVEL_DEBUG : LOG_LEVEL_ERROR);
 
   initialize_pw_backend(argc, argv);
   srand((unsigned int)time(NULL));
@@ -397,7 +397,7 @@ int main(int argc, char **argv) {
     config_path = resolved_config_path;
   }
   if (config_path) {
-    dewlock_log(LOG_DEBUG, "Found config at %s", config_path);
+    log_debug("Found config at %s", config_path);
   }
   cfg_read(config_path, &g_state);
   free(resolved_config_path);
@@ -413,11 +413,11 @@ int main(int argc, char **argv) {
   state_set_time(&g_state);
 
   if (pipe(sigusr_fds) != 0) {
-    dewlock_log(LOG_ERROR, "Failed to pipe%s", "");
+    log_error("Failed to pipe", NULL);
     return EXIT_FAILURE;
   }
   if (fcntl(sigusr_fds[1], F_SETFL, O_NONBLOCK) == -1) {
-    dewlock_log(LOG_ERROR, "Failed to make pipe end nonblocking%s", "");
+    log_error("Failed to make pipe end nonblocking", NULL);
     return EXIT_FAILURE;
   }
 
@@ -425,9 +425,9 @@ int main(int argc, char **argv) {
   g_state.xkb.context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
   g_state.display = wl_display_connect(NULL);
   if (!g_state.display) {
-    dewlock_log(LOG_ERROR, "Unable to connect to the compositor. "
-                           "If your compositor is running, check or set the "
-                           "WAYLAND_DISPLAY environment variable.%s", "");
+    log_error("Unable to connect to the compositor. "
+              "If your compositor is running, check or set the "
+              "WAYLAND_DISPLAY environment variable.", NULL);
     return EXIT_FAILURE;
   }
   g_state.eventloop = loop_create();
@@ -435,27 +435,27 @@ int main(int argc, char **argv) {
   struct wl_registry *registry = wl_display_get_registry(g_state.display);
   wl_registry_add_listener(registry, &registry_listener, &g_state);
   if (wl_display_roundtrip(g_state.display) == -1) {
-    dewlock_log(LOG_ERROR, "wl_display_roundtrip() failed%s", "");
+    log_error("wl_display_roundtrip() failed", NULL);
     return EXIT_FAILURE;
   }
 
   if (!g_state.compositor) {
-    dewlock_log(LOG_ERROR, "Missing wl_compositor%s", "");
+    log_error("Missing wl_compositor", NULL);
     return 1;
   }
 
   if (!g_state.subcompositor) {
-    dewlock_log(LOG_ERROR, "Missing wl_subcompositor%s", "");
+    log_error("Missing wl_subcompositor", NULL);
     return 1;
   }
 
   if (!g_state.shm) {
-    dewlock_log(LOG_ERROR, "Missing wl_shm%s", "");
+    log_error("Missing wl_shm", NULL);
     return 1;
   }
 
   if (!g_state.ext_session_lock_manager_v1) {
-    dewlock_log(LOG_ERROR, "Missing ext-session-lock-v1%s", "");
+    log_error("Missing ext-session-lock-v1", NULL);
     return 1;
   }
 
@@ -473,14 +473,14 @@ int main(int argc, char **argv) {
 
   while (!g_state.locked) {
     if (wl_display_dispatch(g_state.display) < 0) {
-      dewlock_log(LOG_ERROR, "wl_display_dispatch() failed%s", "");
+      log_error("wl_display_dispatch() failed", NULL);
       return 2;
     }
   }
 
   if (opts->ready_fd >= 0) {
     if (write(opts->ready_fd, "\n", 1) != 1) {
-      dewlock_log(LOG_ERROR, "Failed to send readiness notification%s", "");
+      log_error("Failed to send readiness notification", NULL);
       return 2;
     }
     close(opts->ready_fd);
