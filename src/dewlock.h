@@ -1,5 +1,4 @@
 #pragma once
-#include "background-image.h"
 #include "cairo.h"
 #include "pool-buffer.h"
 #include "seat.h"
@@ -20,27 +19,6 @@ enum input_state {
   INPUT_STATE_DIRTY,    // input was touched
 };
 
-// FIXME: this should divide runtime configuration from CLI options
-struct dewlock_args {
-  struct {
-    uint32_t background; // used when image is not specified
-    uint32_t overlay;
-    uint32_t text;
-    uint32_t warning;
-    uint32_t error;
-  } colors;
-  struct {
-    char *path;
-    enum background_mode mode;
-  } background;
-  struct {
-    const char *family;
-    uint32_t size;
-  } font;
-  bool daemonize;
-  int ready_fd;
-};
-
 struct dewlock_string {
   size_t len;
   size_t cap;
@@ -59,7 +37,6 @@ struct dewlock_state {
   struct wl_shm *shm;
   struct wl_list surfaces;
   struct wl_list images;
-  struct dewlock_args args;
   struct dewlock_string password;
   char *username;
   char *time;
@@ -117,6 +94,3 @@ void run_pw_backend_child(void);
 // fails to link (PAM=0 build only). Was removed at some point in history
 // (see `git log -S"clear_buffer"`) without updating callers.
 void clear_buffer(char *buf, size_t size);
-
-// Like strcmp, but treats NULL as distinct from (and less than) any string.
-int lenient_strcmp(char *a, char *b);

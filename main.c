@@ -1,8 +1,9 @@
 #include "background-image.h"
 #include "cairo.h"
+#include "cli.h"
 #include "clock.h"
 #include "comm.h"
-#include "configuration.h"
+#include "config.h"
 #include "dewlock.h"
 #include "ext-session-lock-v1-client-protocol.h"
 #include "log.h"
@@ -10,10 +11,10 @@
 #include "password-buffer.h"
 #include "pool-buffer.h"
 #include "seat.h"
+#include "strcmp.h"
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <getopt.h>
 #include <poll.h>
 #include <pwd.h>
 #include <signal.h>
@@ -31,18 +32,6 @@ static struct dewlock_state g_state;
 
 static const struct ext_session_lock_surface_v1_listener
     ext_session_lock_surface_v1_listener;
-
-int lenient_strcmp(char *a, char *b) {
-  if (a == b) {
-    return 0;
-  } else if (!a) {
-    return -1;
-  } else if (!b) {
-    return 1;
-  } else {
-    return strcmp(a, b);
-  }
-}
 
 static void daemonize(void) {
   int fds[2];
@@ -109,7 +98,9 @@ static bool surface_is_opaque(struct dewlock_surface *surface) {
   if (surface->image) {
     return cairo_surface_get_content(surface->image) == CAIRO_CONTENT_COLOR;
   }
-  return (surface->state->args.colors.background & 0xff) == 0xff;
+  cfg_t *cfg;
+  cfg_get(&cfg);
+  return (cfg->colors.background & 0xff) == 0xff;
 }
 
 static void create_surface(struct dewlock_surface *surface) {
@@ -133,9 +124,10 @@ static void create_surface(struct dewlock_surface *surface) {
       surface->ext_session_lock_surface_v1,
       &ext_session_lock_surface_v1_listener, surface);
 
-  if (surface_is_opaque(surface) &&
-      surface->state->args.background.mode != BACKGROUND_MODE_CENTER &&
-      surface->state->args.background.mode != BACKGROUND_MODE_FIT) {
+  cfg_t *cfg;
+  cfg_get(&cfg);
+  if (surface_is_opaque(surface) && cfg->background.mode != BACKGROUND_MODE_CENTER &&
+      cfg->background.mode != BACKGROUND_MODE_FIT) {
     struct wl_region *region =
         wl_compositor_create_region(surface->state->compositor);
     wl_region_add(region, 0, 0, INT32_MAX, INT32_MAX);
@@ -381,79 +373,34 @@ static void term_in(int fd, short mask, void *data) {
   g_state.run_display = false;
 }
 
-// Check for --debug 'early' we also apply the correct loglevel
-// to the forked child, without having to first proces all of the
-// configuration (including from file) before forking and (in the
-// case of the shadow backend) dropping privileges
-void log_init(int argc, char **argv) {
-  static struct option long_options[] = {{"debug", no_argument, NULL, 'd'},
-                                         {0, 0, 0, 0}};
-  int c;
-  optind = 1;
-  while (1) {
-    int opt_idx = 0;
-    c = getopt_long(argc, argv, "-:d", long_options, &opt_idx);
-    if (c == -1) {
-      break;
-    }
-    switch (c) {
-    case 'd':
-      dewlock_log_init(LOG_DEBUG);
-      return;
-    default:
-      break;
-    }
-  }
-  dewlock_log_init(LOG_ERROR);
-}
-
 int main(int argc, char **argv) {
-  log_init(argc, argv);
+  // Parse argv once, fully, before forking the password backend (and, for
+  // the shadow backend, dropping setuid root) so the log level is settled
+  // beforehand.
+  cli_parse(argc, argv);
+  cli_opts_t *opts;
+  cli_get(&opts);
+  dewlock_log_init(opts->debug ? LOG_DEBUG : LOG_ERROR);
+
   initialize_pw_backend(argc, argv);
   srand((unsigned int)time(NULL));
 
   g_state.failed_attempts = 0;
-  g_state.args = (struct dewlock_args){
-      .font.family = "sans-serif",
-      .font.size = 16,
-      .background.mode = BACKGROUND_MODE_FILL,
-      .colors.background = 0xA3A3A3FF,
-      .colors.overlay = 0x00000055,
-      .colors.text = 0xFFFFFFFF,
-      .colors.warning = 0xffdd00ff,
-      .colors.error = 0xcc6566ff,
-      .ready_fd = -1,
-  };
   wl_list_init(&g_state.images);
 
   g_state.username = getpwuid(getuid())->pw_name;
 
-  char *config_path = NULL;
-  int result = parse_cli_args(argc, argv, NULL, &config_path);
-  if (result != 0) {
-    free(config_path);
-    return result;
-  }
+  char *resolved_config_path = NULL;
+  const char *config_path = opts->config;
   if (!config_path) {
-    config_path = get_config_path();
+    resolved_config_path = cfg_path();
+    config_path = resolved_config_path;
   }
-
   if (config_path) {
     dewlock_log(LOG_DEBUG, "Found config at %s", config_path);
-    int config_status = load_config(config_path, &g_state);
-    free(config_path);
-    if (config_status != 0) {
-      return config_status;
-    }
   }
-
-  if (argc > 1) {
-    dewlock_log(LOG_DEBUG, "Parsing CLI Args%s", "");
-    result = parse_cli_args(argc, argv, &g_state, NULL);
-    if (result != 0) {
-      return result;
-    }
-  }
+  cfg_read(config_path, &g_state);
+  free(resolved_config_path);
 
   g_state.password.len = 0;
   g_state.password.cap = 1024;
@@ -464,7 +411,6 @@ int main(int argc, char **argv) {
   g_state.password.buf[0] = 0;
 
   state_set_time(&g_state);
-  load_image(&g_state);
 
   if (pipe(sigusr_fds) != 0) {
     dewlock_log(LOG_ERROR, "Failed to pipe%s", "");
@@ -532,15 +478,15 @@ int main(int argc, char **argv) {
     }
   }
 
-  if (g_state.args.ready_fd >= 0) {
-    if (write(g_state.args.ready_fd, "\n", 1) != 1) {
+  if (opts->ready_fd >= 0) {
+    if (write(opts->ready_fd, "\n", 1) != 1) {
       dewlock_log(LOG_ERROR, "Failed to send readiness notification%s", "");
       return 2;
     }
-    close(g_state.args.ready_fd);
-    g_state.args.ready_fd = -1;
+    close(opts->ready_fd);
+    opts->ready_fd = -1;
   }
-  if (g_state.args.daemonize) {
+  if (opts->daemonize) {
     daemonize();
   }
 

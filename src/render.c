@@ -1,5 +1,6 @@
 #include "background-image.h"
 #include "cairo.h"
+#include "config.h"
 #include "dewlock.h"
 #include "log.h"
 #include <assert.h>
@@ -26,6 +27,8 @@ static bool render_frame(struct dewlock_surface *surface);
 
 void render(struct dewlock_surface *surface) {
   struct dewlock_state *state = surface->state;
+  cfg_t *cfg;
+  cfg_get(&cfg);
 
   int buffer_width = (int)surface->width * surface->scale;
   int buffer_height = (int)surface->height * surface->scale;
@@ -56,14 +59,12 @@ void render(struct dewlock_surface *surface) {
 
     cairo_save(cairo);
     cairo_set_operator(cairo, CAIRO_OPERATOR_SOURCE);
-    cairo_set_source_u32(cairo, state->args.colors.background);
+    cairo_set_source_u32(cairo, cfg->colors.background);
     cairo_paint(cairo);
-    if (surface->image &&
-        state->args.background.mode != BACKGROUND_MODE_SOLID_COLOR) {
+    if (surface->image && cfg->background.mode != BACKGROUND_MODE_SOLID_COLOR) {
       cairo_set_operator(cairo, CAIRO_OPERATOR_OVER);
-      render_background_image(cairo, surface->image,
-                              state->args.background.mode, buffer_width,
-                              buffer_height);
+      render_background_image(cairo, surface->image, cfg->background.mode,
+                              buffer_width, buffer_height);
     }
     cairo_restore(cairo);
     cairo_identity_matrix(cairo);
@@ -131,24 +132,27 @@ static void draw_text(cairo_t *cairo, double width, double y,
 
 static void draw_idle(cairo_t *c, struct dewlock_state *state, double h,
                       double w) {
+  cfg_t *cfg;
+  cfg_get(&cfg);
+
   const double datey = h / 6;
   const double helpy = h * 5 / 6;
   cairo_text_extents_t extents;
 
   struct dewlock_text opts = {
-      .color = state->args.colors.text,
-      .family = state->args.font.family,
+      .color = cfg->colors.text,
+      .family = cfg->font.family,
   };
 
-  opts.size = state->args.font.size * 6.5;
+  opts.size = cfg->font.size * 6.5;
   opts.weight = CAIRO_FONT_WEIGHT_BOLD;
   draw_text(c, w, datey, opts, state->time, &extents);
 
-  opts.size = state->args.font.size * 2;
+  opts.size = cfg->font.size * 2;
   opts.weight = CAIRO_FONT_WEIGHT_NORMAL;
   draw_text(c, w, datey + extents.height, opts, state->date, &extents);
 
-  opts.size = state->args.font.size;
+  opts.size = cfg->font.size;
   draw_text(c, w, helpy, opts, "Press any key to unlock", &extents);
 }
 
@@ -174,19 +178,22 @@ static inline void set_password(cairo_t *c, struct dewlock_state *state,
 
 static void draw_form(cairo_t *c, struct dewlock_state *state, double h,
                       double w) {
-  const double inputw = state->args.font.size * 20;
-  const double inputpadx = state->args.font.size;
-  const double inputh = state->args.font.size * 3;
-  const double spacing = state->args.font.size * 1.5;
-  const double border = state->args.font.size * 0.25;
+  cfg_t *cfg;
+  cfg_get(&cfg);
+
+  const double inputw = cfg->font.size * 20;
+  const double inputpadx = cfg->font.size;
+  const double inputh = cfg->font.size * 3;
+  const double spacing = cfg->font.size * 1.5;
+  const double border = cfg->font.size * 0.25;
   cairo_text_extents_t extents;
 
   struct dewlock_text opts = {
-      .color = state->args.colors.text,
-      .family = state->args.font.family,
+      .color = cfg->colors.text,
+      .family = cfg->font.family,
   };
 
-  opts.size = state->args.font.size * 1.5;
+  opts.size = cfg->font.size * 1.5;
   opts.weight = CAIRO_FONT_WEIGHT_NORMAL;
 
   static char pwd[128];
@@ -202,11 +209,11 @@ static void draw_form(cairo_t *c, struct dewlock_state *state, double h,
   }
 
   struct dewlock_text username_opts = opts;
-  username_opts.size = state->args.font.size * 2.25;
+  username_opts.size = cfg->font.size * 2.25;
   username_opts.weight = CAIRO_FONT_WEIGHT_BOLD;
 
   struct dewlock_text message_opts = opts;
-  message_opts.size = state->args.font.size;
+  message_opts.size = cfg->font.size;
   message_opts.weight = CAIRO_FONT_WEIGHT_NORMAL;
 
   cairo_text_extents_t username_extents, message_extents;
@@ -224,8 +231,8 @@ static void draw_form(cairo_t *c, struct dewlock_state *state, double h,
   const double inputy = formy + extents.height + spacing;
 
   uint32_t color = state->auth_state == AUTH_STATE_INVALID
-                       ? state->args.colors.error
-                       : state->args.colors.text;
+                       ? cfg->colors.error
+                       : cfg->colors.text;
 
   cairo_set_source_u32(c, color);
   cairo_set_line_width(c, border);
@@ -233,20 +240,20 @@ static void draw_form(cairo_t *c, struct dewlock_state *state, double h,
   cairo_line_to(c, inputx + inputw, inputy + inputh);
   cairo_stroke(c);
 
-  cairo_set_source_u32(c, state->args.colors.overlay);
+  cairo_set_source_u32(c, cfg->colors.overlay);
   cairo_rectangle(c, inputx, inputy, inputw, inputh);
   cairo_fill(c);
 
-  opts.size = state->args.font.size * 1.5;
+  opts.size = cfg->font.size * 1.5;
   opts.weight = CAIRO_FONT_WEIGHT_NORMAL;
   opts.color = color;
-  draw_text(c, w, inputy + spacing + state->args.font.size * 0.5, opts, pwd,
+  draw_text(c, w, inputy + spacing + cfg->font.size * 0.5, opts, pwd,
             &extents);
 
   if (state->auth_state == AUTH_STATE_IDLE && state->xkb.caps_lock) {
-    opts.size = state->args.font.size * 0.75;
+    opts.size = cfg->font.size * 0.75;
     opts.weight = CAIRO_FONT_WEIGHT_BOLD;
-    opts.color = state->args.colors.warning;
+    opts.color = cfg->colors.warning;
     draw_text(c, w, inputy + inputh + spacing, opts, "CAPS LOCK IS ON",
               &extents);
   }
@@ -257,6 +264,8 @@ static void draw_form(cairo_t *c, struct dewlock_state *state, double h,
 
 static bool render_frame(struct dewlock_surface *surface) {
   struct dewlock_state *state = surface->state;
+  cfg_t *cfg;
+  cfg_get(&cfg);
 
   // Compute the size of the buffer needed
   int buffer_width = (int)surface->width;
@@ -284,7 +293,7 @@ static bool render_frame(struct dewlock_surface *surface) {
 
   // Clear
   cairo_save(cairo);
-  cairo_set_source_u32(cairo, state->args.colors.overlay);
+  cairo_set_source_u32(cairo, cfg->colors.overlay);
   cairo_set_operator(cairo, CAIRO_OPERATOR_SOURCE);
   cairo_paint(cairo);
   cairo_restore(cairo);
