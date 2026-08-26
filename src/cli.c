@@ -15,8 +15,10 @@ static struct option OPTIONS[] = {
     {"ready-fd", required_argument, 0, 'r'},
     {"help", no_argument, 0, 'h'},
     {"version", no_argument, 0, 'v'},
+    {0, 0, 0, 0},
 };
-static const char *DESC[len(OPTIONS)] = {
+#define NUM_OPTIONS (len(OPTIONS) - 1)
+static const char *DESC[NUM_OPTIONS] = {
     "Path to the config file.",
     "Enable debugging output.",
     "Detach from the controlling terminal after locking.",
@@ -24,7 +26,7 @@ static const char *DESC[len(OPTIONS)] = {
     "Show this help message and quit.",
     "Show the version number and quit.",
 };
-static const char *ARGS[len(OPTIONS)] = {
+static const char *ARGS[NUM_OPTIONS] = {
     "path", "", "", "fd", "", "",
 };
 
@@ -41,7 +43,7 @@ static void print_help(void) {
 
   fprintf(out, "Usage: %s [options...]\n\n", NAME);
 
-  for (size_t i = 0; i < len(OPTIONS); i++) {
+  for (size_t i = 0; i < NUM_OPTIONS; i++) {
     struct option opt = OPTIONS[i];
 
     if (opt.has_arg == no_argument) {
@@ -63,11 +65,14 @@ static void print_version(void) {
 
 static void print_error(int opt, char *const *argv) {
   FILE *out = stdout;
-  const char *name = argv[optind - 1];
   if (opt == '?') {
-    fprintf(out, "%s: invalid option '%s'\n", NAME, name);
+    if (optopt != 0) {
+      fprintf(out, "%s: invalid option '-%c'\n", NAME, optopt);
+    } else {
+      fprintf(out, "%s: invalid option '%s'\n", NAME, argv[optind - 1]);
+    }
   } else {
-    fprintf(out, "%s: option '%s' requires an argument\n", NAME, name);
+    fprintf(out, "%s: option '%s' requires an argument\n", NAME, argv[optind - 1]);
   }
 }
 
