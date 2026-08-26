@@ -122,7 +122,8 @@ main.o: protocols/ext-session-lock-v1-client-protocol.h
 src/background-image.o: src/cairo.o src/log.o
 src/clock.o: src/loop.o
 src/comm.o: src/log.o src/password-buffer.o
-src/configuration.o: src/background-image.o src/log.o
+src/cli.o:
+src/config.o: src/background-image.o src/color.h src/log.o src/strcmp.h
 src/loop.o: src/log.o
 src/password-buffer.o: src/log.o
 src/password.o: src/comm.o src/loop.o src/seat.o src/unicode.o
@@ -135,7 +136,7 @@ main: CFLAGS += -Isrc $(DEPS_CFLAGS) \
 	-isystem protocols -DVERSION='"$(VERSION)"' -DSHA='"$(SHA)"'
 main: LDLIBS += $(DEPS_LIBS) $(PW_BACKEND_LIBS) -lm -lrt
 main: main.o protocols/ext-session-lock-v1-protocol.o src/background-image.o \
-	src/cairo.o src/clock.o src/comm.o src/configuration.o src/log.o \
+	src/cairo.o src/cli.o src/clock.o src/comm.o src/config.o src/log.o \
 	src/loop.o src/password-buffer.o src/password.o src/pool-buffer.o \
 	src/render.o src/seat.o src/unicode.o $(PW_BACKEND)
 	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
