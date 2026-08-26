@@ -1,67 +1,24 @@
 #include "log.h"
-#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <unistd.h>
 
-static enum log_importance log_importance = LOG_ERROR;
-
-static const char *verbosity_colors[] = {
-    [LOG_SILENT] = "",
-    [LOG_ERROR] = "\x1B[1;31m",
-    [LOG_INFO] = "\x1B[1;34m",
-    [LOG_DEBUG] = "\x1B[1;90m",
+static log_level_t current_level = LOG_LEVEL_ERROR;
+static const char *LOG_LEVEL[LOG_LEVELS] = {
+    "NONE", "ERROR", "WARN", "INFO", "DEBUG",
 };
 
-void dewlock_log_init(enum log_importance verbosity) {
-  if (verbosity < LOG_IMPORTANCE_LAST) {
-    log_importance = verbosity;
-  }
-}
+void log_init(log_level_t level) { current_level = level; }
 
-void _dewlock_log(enum log_importance verbosity, const char *fmt, ...) {
-  if (verbosity > log_importance) {
+void _log_put(log_level_t level, const char *file, int line, const char *fmt,
+              ...) {
+  if (level > current_level)
     return;
-  }
+
+  fprintf(stderr, "[%s:%d] %s - ", file, line, LOG_LEVEL[level]);
 
   va_list args;
   va_start(args, fmt);
-
-  // prefix the time to the log message
-  struct tm result;
-  time_t t = time(NULL);
-  struct tm *tm_info = localtime_r(&t, &result);
-  char buffer[26];
-
-  // generate time prefix
-  strftime(buffer, sizeof(buffer), "%F %T - ", tm_info);
-  fprintf(stderr, "%s", buffer);
-
-  unsigned c =
-      (verbosity < LOG_IMPORTANCE_LAST) ? verbosity : LOG_IMPORTANCE_LAST - 1;
-
-  if (isatty(STDERR_FILENO)) {
-    fprintf(stderr, "%s", verbosity_colors[c]);
-  }
-
   vfprintf(stderr, fmt, args);
-
-  if (isatty(STDERR_FILENO)) {
-    fprintf(stderr, "\x1B[0m");
-  }
   fprintf(stderr, "\n");
-
   va_end(args);
-}
-
-const char *_dewlock_strip_path(const char *filepath) {
-  if (*filepath == '.') {
-    while (*filepath == '.' || *filepath == '/') {
-      ++filepath;
-    }
-  }
-  return filepath;
 }

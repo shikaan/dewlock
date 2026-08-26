@@ -1,33 +1,22 @@
 #pragma once
 
-#include <errno.h>
-#include <stdarg.h>
-#include <string.h>
+typedef enum {
+  LOG_LEVEL_NONE,
+  LOG_LEVEL_ERROR,
+  LOG_LEVEL_WARN,
+  LOG_LEVEL_INFO,
+  LOG_LEVEL_DEBUG,
 
-enum log_importance {
-  LOG_SILENT = 0,
-  LOG_ERROR = 1,
-  LOG_INFO = 2,
-  LOG_DEBUG = 3,
-  LOG_IMPORTANCE_LAST,
-};
+  LOG_LEVELS
+} log_level_t;
 
-void dewlock_log_init(enum log_importance verbosity);
+void log_init(log_level_t level);
 
-#ifdef __GNUC__
-#define _ATTRIB_PRINTF(start, end) __attribute__((format(printf, start, end)))
-#else
-#define _ATTRIB_PRINTF(start, end)
-#endif
+void _log_put(log_level_t level, const char *file, int line, const char* fmt, ...);
+#define log_put(Level, Fmt, ...) \
+  _log_put(Level, __FILE__, __LINE__, Fmt, ##__VA_ARGS__);
 
-void _dewlock_log(enum log_importance verbosity, const char *format, ...)
-    _ATTRIB_PRINTF(2, 3);
-
-const char *_dewlock_strip_path(const char *filepath);
-
-#define dewlock_log(verb, fmt, ...)                                            \
-  _dewlock_log(verb, "[%s:%d] " fmt, _dewlock_strip_path(__FILE__), __LINE__,  \
-               ##__VA_ARGS__)
-
-#define dewlock_log_errno(verb, fmt, ...)                                      \
-  dewlock_log(verb, fmt ": %s", ##__VA_ARGS__, strerror(errno))
+#define log_error(Fmt, ...) log_put(LOG_LEVEL_ERROR, Fmt, ##__VA_ARGS__)
+#define log_warn(Fmt, ...) log_put(LOG_LEVEL_WARN, Fmt, ##__VA_ARGS__)
+#define log_info(Fmt, ...) log_put(LOG_LEVEL_INFO, Fmt, ##__VA_ARGS__)
+#define log_debug(Fmt, ...) log_put(LOG_LEVEL_DEBUG, Fmt, ##__VA_ARGS__)

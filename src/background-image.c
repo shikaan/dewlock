@@ -2,6 +2,7 @@
 #include "cairo.h"
 #include "log.h"
 #include <assert.h>
+#include <string.h>
 
 enum background_mode parse_background_mode(const char *mode) {
   if (strcmp(mode, "stretch") == 0) {
@@ -17,19 +18,19 @@ enum background_mode parse_background_mode(const char *mode) {
   } else if (strcmp(mode, "solid_color") == 0) {
     return BACKGROUND_MODE_SOLID_COLOR;
   }
-  dewlock_log(LOG_ERROR, "Unsupported background mode: %s", mode);
+  log_error("Unsupported background mode: %s", mode);
   return BACKGROUND_MODE_INVALID;
 }
 
 cairo_surface_t *load_background_image(const char *path) {
   cairo_surface_t *image = cairo_image_surface_create_from_png(path);
   if (!image) {
-    dewlock_log(LOG_ERROR, "Failed to read background image.%s", "");
+    log_error("Failed to read background image.", NULL);
     return NULL;
   }
   if (cairo_surface_status(image) != CAIRO_STATUS_SUCCESS) {
-    dewlock_log(LOG_ERROR, "Failed to read background image: %s.",
-                cairo_status_to_string(cairo_surface_status(image)));
+    log_error("Failed to read background image: %s.",
+              cairo_status_to_string(cairo_surface_status(image)));
     return NULL;
   }
   return image;

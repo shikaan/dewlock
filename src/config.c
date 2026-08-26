@@ -98,10 +98,10 @@ static void load_image(struct dewlock_state *state) {
   wl_list_for_each_safe(iter_image, temp, &state->images, link) {
     if (lenient_strcmp(iter_image->output_name, image->output_name) == 0) {
       if (image->output_name) {
-        dewlock_log(LOG_DEBUG, "Replacing image defined for output %s with %s",
-                    image->output_name, image->path);
+        log_debug("Replacing image defined for output %s with %s",
+                  image->output_name, image->path);
       } else {
-        dewlock_log(LOG_DEBUG, "Replacing default image with %s", image->path);
+        log_debug("Replacing default image with %s", image->path);
       }
       wl_list_remove(&iter_image->link);
       free(iter_image->cairo_surface);
@@ -135,8 +135,8 @@ static void load_image(struct dewlock_state *state) {
     return;
   }
   wl_list_insert(&state->images, &image->link);
-  dewlock_log(LOG_DEBUG, "Loaded image %s for output %s", image->path,
-              image->output_name ? image->output_name : "*");
+  log_debug("Loaded image %s for output %s", image->path,
+            image->output_name ? image->output_name : "*");
 }
 
 char *cfg_path(void) {
@@ -182,20 +182,17 @@ void cfg_read(const char *path, struct dewlock_state *state) {
   init();
 
   if (!path) {
-    dewlock_log(LOG_INFO, "no configuration file, using defaults%s", "");
+    log_info("no configuration file, using defaults", NULL);
   } else {
     FILE *config_file = fopen(path, "r");
     if (!config_file) {
-      // TODO: promote to a WARN level once log.c grows one (this is
-      // recoverable: we fall back to defaults and keep running).
-      dewlock_log(LOG_ERROR, "failed to load config at '%s', using defaults",
-                  path);
+      log_warn("failed to load config at '%s', using defaults", path);
     } else {
       char *line = NULL;
       size_t line_size = 0;
       ssize_t nread;
       int line_number = 0;
-      dewlock_log(LOG_DEBUG, "config file:%s", "");
+      log_debug("config file:", NULL);
       while ((nread = getline(&line, &line_size, config_file)) != -1) {
         line_number++;
 
@@ -203,18 +200,15 @@ void cfg_read(const char *path, struct dewlock_state *state) {
           line[--nread] = '\0';
         }
 
-        dewlock_log(LOG_DEBUG, "  %d | %s", line_number, line);
+        log_debug("  %d | %s", line_number, line);
         if (!*line || line[0] == CONFIG_COMMENT) {
           continue;
         }
 
         char *separator = strchr(line, CONFIG_VALUE_SEPARATOR);
         if (!separator) {
-          // TODO: promote to a WARN level once log.c grows one (this is
-          // recoverable: the line is skipped and parsing continues).
-          dewlock_log(LOG_ERROR,
-                      "invalid config line %d (missing '='), skipping",
-                      line_number);
+          log_warn("invalid config line %d (missing '='), skipping",
+                   line_number);
           continue;
         }
 
@@ -223,11 +217,8 @@ void cfg_read(const char *path, struct dewlock_state *state) {
 
         char *dot = strchr(line, CONFIG_NAMESPACE_SEPARATOR);
         if (!dot) {
-          // TODO: promote to a WARN level once log.c grows one (this is
-          // recoverable: the line is skipped and parsing continues).
-          dewlock_log(LOG_ERROR,
-                      "invalid config line %d (missing '.'), skipping",
-                      line_number);
+          log_warn("invalid config line %d (missing '.'), skipping",
+                   line_number);
           continue;
         }
         *dot = '\0';

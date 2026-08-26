@@ -3,6 +3,7 @@
 #include "dewlock.h"
 #include "log.h"
 #include "password-buffer.h"
+#include <errno.h>
 #include <pwd.h>
 #include <security/pam_appl.h>
 #include <stdbool.h>
@@ -13,10 +14,9 @@
 void initialize_pw_backend(int argc, char **argv) {
   (void)argc;
   if (getuid() != geteuid() || getgid() != getegid()) {
-    dewlock_log(LOG_ERROR,
-                "dewlock is setuid, but was compiled with the PAM"
-                " backend. Run 'chmod a-s %s' to fix. Aborting.",
-                argv[0]);
+    log_error("dewlock is setuid, but was compiled with the PAM"
+              " backend. Run 'chmod a-s %s' to fix. Aborting.",
+              argv[0]);
     exit(EXIT_FAILURE);
   }
   if (!spawn_comm_child()) {
@@ -36,7 +36,7 @@ static int handle_conversation(int num_msg, const struct pam_message **msg,
   struct pam_response *pam_reply =
       calloc((size_t)num_msg, sizeof(struct pam_response));
   if (pam_reply == NULL) {
-    dewlock_log(LOG_ERROR, "Allocation failed%s", "");
+    log_error("Allocation failed", NULL);
     return PAM_ABORT;
   }
   *resp = pam_reply;
@@ -53,7 +53,7 @@ static int handle_conversation(int num_msg, const struct pam_message **msg,
       }
       pam_reply[i].resp = strdup(state->password); // PAM clears and frees this
       if (pam_reply[i].resp == NULL) {
-        dewlock_log(LOG_ERROR, "Allocation failed%s", "");
+        log_error("Allocation failed", NULL);
         return PAM_ABORT;
       }
       state->password = NULL;
@@ -89,7 +89,7 @@ void run_pw_backend_child(void) {
   char *pw_buf = NULL;
   struct passwd *passwd = getpwuid(getuid());
   if (!passwd) {
-    dewlock_log_errno(LOG_ERROR, "getpwuid failed%s", "");
+    log_error("getpwuid failed: %s", strerror(errno));
     exit(EXIT_FAILURE);
   }
 
@@ -102,12 +102,12 @@ void run_pw_backend_child(void) {
   };
   pam_handle_t *auth_handle = NULL;
   if (pam_start("dewlock", username, &conv, &auth_handle) != PAM_SUCCESS) {
-    dewlock_log(LOG_ERROR, "pam_start failed%s", "");
+    log_error("pam_start failed", NULL);
     exit(EXIT_FAILURE);
   }
 
   /* This code does not run as root */
-  dewlock_log(LOG_DEBUG, "Prepared to authorize user %s", username);
+  log_debug("Prepared to authorize user %s", username);
 
   int pam_status = PAM_SUCCESS;
   while (1) {
@@ -126,8 +126,7 @@ void run_pw_backend_child(void) {
 
     bool success = pam_status == PAM_SUCCESS;
     if (!success) {
-      dewlock_log(LOG_ERROR, "pam_authenticate failed: %s",
-                  get_pam_auth_error(pam_status));
+      log_error("pam_authenticate failed: %s", get_pam_auth_error(pam_status));
     }
 
     if (!write_comm_reply(success)) {
@@ -144,7 +143,7 @@ void run_pw_backend_child(void) {
   pam_setcred(auth_handle, PAM_REFRESH_CRED);
 
   if (pam_end(auth_handle, pam_status) != PAM_SUCCESS) {
-    dewlock_log(LOG_ERROR, "pam_end failed%s", "");
+    log_error("pam_end failed", NULL);
     exit(EXIT_FAILURE);
   }
 

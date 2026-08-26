@@ -1,10 +1,12 @@
 #undef _POSIX_C_SOURCE
 #define _XOPEN_SOURCE // for crypt
 #include <assert.h>
+#include <errno.h>
 #include <pwd.h>
 #include <shadow.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
 #ifdef __GLIBC__
@@ -24,37 +26,36 @@ void initialize_pw_backend(int argc, char **argv) {
   /* This code runs as root */
   struct passwd *pwent = getpwuid(getuid());
   if (!pwent) {
-    dewlock_log_errno(LOG_ERROR, "failed to getpwuid%s", "");
+    log_error("failed to getpwuid: %s", strerror(errno));
     exit(EXIT_FAILURE);
   }
   encpw = pwent->pw_passwd;
   if (strcmp(encpw, "x") == 0) {
     struct spwd *swent = getspnam(pwent->pw_name);
     if (!swent) {
-      dewlock_log_errno(LOG_ERROR, "failed to getspnam%s", "");
+      log_error("failed to getspnam: %s", strerror(errno));
       exit(EXIT_FAILURE);
     }
     encpw = swent->sp_pwdp;
   }
 
   if (setgid(getgid()) != 0) {
-    dewlock_log_errno(LOG_ERROR, "Unable to drop root%s", "");
+    log_error("Unable to drop root: %s", strerror(errno));
     exit(EXIT_FAILURE);
   }
   if (setuid(getuid()) != 0) {
-    dewlock_log_errno(LOG_ERROR, "Unable to drop root%s", "");
+    log_error("Unable to drop root: %s", strerror(errno));
     exit(EXIT_FAILURE);
   }
   if (setuid(0) != -1 || setgid(0) != -1) {
-    dewlock_log_errno(LOG_ERROR,
-                      "Unable to drop root (we shouldn't be "
-                      "able to restore it after setuid/setgid)%s",
-                      "");
+    log_error("Unable to drop root (we shouldn't be "
+              "able to restore it after setuid/setgid): %s",
+              strerror(errno));
     exit(EXIT_FAILURE);
   }
 
   /* This code does not run as root */
-  dewlock_log(LOG_DEBUG, "Prepared to authorize user %s", pwent->pw_name);
+  log_debug("Prepared to authorize user %s", pwent->pw_name);
 
   if (!spawn_comm_child()) {
     exit(EXIT_FAILURE);
@@ -81,7 +82,7 @@ void run_pw_backend_child(void) {
     buf = NULL;
 
     if (c == NULL) {
-      dewlock_log_errno(LOG_ERROR, "crypt failed%s", "");
+      log_error("crypt failed: %s", strerror(errno));
       exit(EXIT_FAILURE);
     }
     bool success = strcmp(c, encpw) == 0;
