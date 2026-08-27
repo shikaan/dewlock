@@ -38,16 +38,15 @@ static int anonymous_shm_open(void) {
 
 static void buffer_release(void *data, struct wl_buffer *wl_buffer) {
   (void)wl_buffer;
-  struct pool_buffer *buffer = data;
+  pool_buffer_t *buffer = data;
   buffer->busy = false;
 }
 
 static const struct wl_buffer_listener buffer_listener = {.release =
                                                               buffer_release};
 
-struct pool_buffer *create_buffer(struct wl_shm *shm, struct pool_buffer *buf,
-                                  int32_t width, int32_t height,
-                                  uint32_t format) {
+pool_buffer_t *create_buffer(struct wl_shm *shm, pool_buffer_t *buf,
+                             int32_t width, int32_t height, uint32_t format) {
   assert(shm && "shm must be non-null");
   assert(buf && "buf must be non-null");
   assert(width >= 0 && "width must be non-negative");
@@ -84,7 +83,7 @@ struct pool_buffer *create_buffer(struct wl_shm *shm, struct pool_buffer *buf,
   return buf;
 }
 
-void destroy_buffer(struct pool_buffer *buffer) {
+void destroy_buffer(pool_buffer_t *buffer) {
   assert(buffer && "buffer must be non-null");
   if (buffer->buffer) {
     wl_buffer_destroy(buffer->buffer);
@@ -98,13 +97,12 @@ void destroy_buffer(struct pool_buffer *buffer) {
   if (buffer->data) {
     munmap(buffer->data, buffer->size);
   }
-  memset(buffer, 0, sizeof(struct pool_buffer));
+  memset(buffer, 0, sizeof(pool_buffer_t));
 }
 
-struct pool_buffer *get_next_buffer(struct wl_shm *shm,
-                                    struct pool_buffer pool[static 2],
-                                    uint32_t width, uint32_t height) {
-  struct pool_buffer *buffer = NULL;
+pool_buffer_t *get_next_buffer(struct wl_shm *shm, pool_buffer_t pool[static 2],
+                               uint32_t width, uint32_t height) {
+  pool_buffer_t *buffer = NULL;
 
   for (size_t i = 0; i < 2; ++i) {
     if (pool[i].busy) {

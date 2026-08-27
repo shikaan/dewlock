@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include <wayland-client.h>
 
-static struct dewlock_state g_state;
+static dewlock_state_t g_state;
 
 static const struct ext_session_lock_surface_v1_listener
     ext_session_lock_surface_v1_listener;
@@ -67,7 +67,7 @@ static void daemonize(void) {
   }
 }
 
-static void destroy_surface(struct dewlock_surface *surface) {
+static void destroy_surface(dewlock_surface_t *surface) {
   if (surface->frame != NULL) {
     wl_callback_destroy(surface->frame);
   }
@@ -90,10 +90,10 @@ static void destroy_surface(struct dewlock_surface *surface) {
   free(surface);
 }
 
-static cairo_surface_t *select_image(struct dewlock_state *state,
-                                     struct dewlock_surface *surface);
+static cairo_surface_t *select_image(dewlock_state_t *state,
+                                     dewlock_surface_t *surface);
 
-static bool surface_is_opaque(struct dewlock_surface *surface) {
+static bool surface_is_opaque(dewlock_surface_t *surface) {
   if (surface->image) {
     return cairo_surface_get_content(surface->image) == CAIRO_CONTENT_COLOR;
   }
@@ -102,8 +102,8 @@ static bool surface_is_opaque(struct dewlock_surface *surface) {
   return (cfg->colors.background & 0xff) == 0xff;
 }
 
-static void create_surface(struct dewlock_surface *surface) {
-  struct dewlock_state *state = surface->state;
+static void create_surface(dewlock_surface_t *surface) {
+  dewlock_state_t *state = surface->state;
 
   surface->image = select_image(state, surface);
 
@@ -149,7 +149,7 @@ static void create_surface(struct dewlock_surface *surface) {
 static void ext_session_lock_surface_v1_handle_configure(
     void *data, struct ext_session_lock_surface_v1 *lock_surface,
     uint32_t serial, uint32_t width, uint32_t height) {
-  struct dewlock_surface *surface = data;
+  dewlock_surface_t *surface = data;
   surface->width = width;
   surface->height = height;
   ext_session_lock_surface_v1_ack_configure(lock_surface, serial);
@@ -162,8 +162,8 @@ static const struct ext_session_lock_surface_v1_listener
         .configure = ext_session_lock_surface_v1_handle_configure,
 };
 
-void damage_state(struct dewlock_state *state) {
-  struct dewlock_surface *surface;
+void damage_state(dewlock_state_t *state) {
+  dewlock_surface_t *surface;
   wl_list_for_each(surface, &state->surfaces, link) {
     surface->dirty = true;
     render(surface);
@@ -183,7 +183,7 @@ static void handle_wl_output_geometry(void *data, struct wl_output *wl_output,
   (void)make;
   (void)model;
   (void)transform;
-  struct dewlock_surface *surface = data;
+  dewlock_surface_t *surface = data;
   surface->subpixel = subpixel;
   if (surface->state->run_display) {
     surface->dirty = true;
@@ -205,7 +205,7 @@ static void handle_wl_output_mode(void *data, struct wl_output *output,
 
 static void handle_wl_output_done(void *data, struct wl_output *output) {
   (void)output;
-  struct dewlock_surface *surface = data;
+  dewlock_surface_t *surface = data;
   if (!surface->created && surface->state->run_display) {
     create_surface(surface);
   }
@@ -214,7 +214,7 @@ static void handle_wl_output_done(void *data, struct wl_output *output) {
 static void handle_wl_output_scale(void *data, struct wl_output *output,
                                    int32_t factor) {
   (void)output;
-  struct dewlock_surface *surface = data;
+  dewlock_surface_t *surface = data;
   surface->scale = factor;
   if (surface->state->run_display) {
     surface->dirty = true;
@@ -225,7 +225,7 @@ static void handle_wl_output_scale(void *data, struct wl_output *output,
 static void handle_wl_output_name(void *data, struct wl_output *output,
                                   const char *name) {
   (void)output;
-  struct dewlock_surface *surface = data;
+  dewlock_surface_t *surface = data;
   surface->output_name = strdup(name);
 }
 
@@ -250,7 +250,7 @@ static void
 ext_session_lock_v1_handle_locked(void *data,
                                   struct ext_session_lock_v1 *lock) {
   (void)lock;
-  struct dewlock_state *state = data;
+  dewlock_state_t *state = data;
   state->locked = true;
 }
 
@@ -274,7 +274,7 @@ static void handle_global(void *data, struct wl_registry *registry,
                           uint32_t name, const char *interface,
                           uint32_t version) {
   (void)version;
-  struct dewlock_state *state = data;
+  dewlock_state_t *state = data;
   if (strcmp(interface, wl_compositor_interface.name) == 0) {
     state->compositor =
         wl_registry_bind(registry, name, &wl_compositor_interface, 4);
@@ -286,11 +286,11 @@ static void handle_global(void *data, struct wl_registry *registry,
   } else if (strcmp(interface, wl_seat_interface.name) == 0) {
     struct wl_seat *seat =
         wl_registry_bind(registry, name, &wl_seat_interface, 4);
-    struct dewlock_seat *dewlock_seat = calloc(1, sizeof(struct dewlock_seat));
+    dewlock_seat_t *dewlock_seat = calloc(1, sizeof(dewlock_seat_t));
     dewlock_seat->state = state;
     wl_seat_add_listener(seat, &seat_listener, dewlock_seat);
   } else if (strcmp(interface, wl_output_interface.name) == 0) {
-    struct dewlock_surface *surface = calloc(1, sizeof(struct dewlock_surface));
+    dewlock_surface_t *surface = calloc(1, sizeof(dewlock_surface_t));
     surface->state = state;
     surface->output = wl_registry_bind(registry, name, &wl_output_interface, 4);
     surface->output_global_name = name;
@@ -306,8 +306,8 @@ static void handle_global(void *data, struct wl_registry *registry,
 static void handle_global_remove(void *data, struct wl_registry *registry,
                                  uint32_t name) {
   (void)registry;
-  struct dewlock_state *state = data;
-  struct dewlock_surface *surface;
+  dewlock_state_t *state = data;
+  dewlock_surface_t *surface;
   wl_list_for_each(surface, &state->surfaces, link) {
     if (surface->output_global_name == name) {
       destroy_surface(surface);
@@ -328,9 +328,9 @@ void do_sigusr(int sig) {
   (void)write(sigusr_fds[1], "1", 1);
 }
 
-static cairo_surface_t *select_image(struct dewlock_state *state,
-                                     struct dewlock_surface *surface) {
-  struct dewlock_image *image;
+static cairo_surface_t *select_image(dewlock_state_t *state,
+                                     dewlock_surface_t *surface) {
+  dewlock_image_t *image;
   cairo_surface_t *default_image = NULL;
   wl_list_for_each(image, &state->images, link) {
     if (lenient_strcmp(image->output_name, surface->output_name) == 0) {
@@ -476,7 +476,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  struct dewlock_surface *surface;
+  dewlock_surface_t *surface;
   wl_list_for_each(surface, &g_state.surfaces, link) { create_surface(surface); }
 
   while (!g_state.locked) {

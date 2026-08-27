@@ -12,7 +12,7 @@
 static void surface_frame_handle_done(void *data, struct wl_callback *callback,
                                       uint32_t time) {
   (void)time;
-  struct dewlock_surface *surface = data;
+  dewlock_surface_t *surface = data;
 
   wl_callback_destroy(callback);
   surface->frame = NULL;
@@ -24,11 +24,11 @@ static const struct wl_callback_listener surface_frame_listener = {
     .done = surface_frame_handle_done,
 };
 
-static bool render_frame(struct dewlock_surface *surface);
+static bool render_frame(dewlock_surface_t *surface);
 
-void render(struct dewlock_surface *surface) {
+void render(dewlock_surface_t *surface) {
   assert(surface && "surface must be non-null");
-  struct dewlock_state *state = surface->state;
+  dewlock_state_t *state = surface->state;
   cfg_t *cfg;
   cfg_get(&cfg);
 
@@ -44,7 +44,7 @@ void render(struct dewlock_surface *surface) {
   }
 
   bool need_destroy = false;
-  struct pool_buffer buffer;
+  pool_buffer_t buffer;
 
   if (buffer_width != surface->last_buffer_width ||
       buffer_height != surface->last_buffer_height) {
@@ -133,7 +133,7 @@ static void draw_text(cairo_t *cairo, double width, double y,
   cairo_show_text(cairo, text);
 }
 
-static void draw_idle(cairo_t *c, struct dewlock_state *state, double h,
+static void draw_idle(cairo_t *c, dewlock_state_t *state, double h,
                       double w) {
   cfg_t *cfg;
   cfg_get(&cfg);
@@ -163,7 +163,7 @@ static inline size_t min3u(size_t a, size_t b, size_t c) {
   return a < b ? (a < c ? a : c) : (b < c ? b : c);
 }
 
-static inline void set_password(cairo_t *c, struct dewlock_state *state,
+static inline void set_password(cairo_t *c, dewlock_state_t *state,
                                 struct dewlock_text opts, double w, double maxw,
                                 char *chars, size_t nchars) {
   assert(chars && "chars must be non-null");
@@ -181,7 +181,7 @@ static inline void set_password(cairo_t *c, struct dewlock_state *state,
   chars[len] = 0;
 }
 
-static void draw_form(cairo_t *c, struct dewlock_state *state, double h,
+static void draw_form(cairo_t *c, dewlock_state_t *state, double h,
                       double w) {
   cfg_t *cfg;
   cfg_get(&cfg);
@@ -267,8 +267,8 @@ static void draw_form(cairo_t *c, struct dewlock_state *state, double h,
   draw_text(c, w, inputy + inputh + spacing * 3, message_opts, msg, &extents);
 }
 
-static bool render_frame(struct dewlock_surface *surface) {
-  struct dewlock_state *state = surface->state;
+static bool render_frame(dewlock_surface_t *surface) {
+  dewlock_state_t *state = surface->state;
   cfg_t *cfg;
   cfg_get(&cfg);
 
@@ -283,7 +283,7 @@ static bool render_frame(struct dewlock_surface *surface) {
   int subsurf_xpos = (int)surface->width / 2 - buffer_width / 2;
   int subsurf_ypos = 0;
 
-  struct pool_buffer *buffer =
+  pool_buffer_t *buffer =
       get_next_buffer(state->shm, surface->indicator_buffers,
                       (uint32_t)buffer_width, (uint32_t)buffer_height);
   if (buffer == NULL) {

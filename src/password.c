@@ -12,12 +12,12 @@
 
 // FIXME: rearrange code around password and its buffer.
 //        This function could be in password-buffer
-void clear_password_buffer(struct dewlock_string *pw) {
+void clear_password_buffer(dewlock_string_t *pw) {
   memset(pw->buf, 0, pw->cap);
   pw->len = 0;
 }
 
-static bool backspace(struct dewlock_string *pw) {
+static bool backspace(dewlock_string_t *pw) {
   if (pw->len != 0) {
     pw->len -= (size_t)utf8_last_size(pw->buf);
     pw->buf[pw->len] = 0;
@@ -26,7 +26,7 @@ static bool backspace(struct dewlock_string *pw) {
   return false;
 }
 
-static void append_ch(struct dewlock_string *pw, uint32_t codepoint) {
+static void append_ch(dewlock_string_t *pw, uint32_t codepoint) {
   size_t utf8_size = utf8_chsize(codepoint);
   if (pw->len + utf8_size + 1 >= pw->cap) {
     // TODO: Display error
@@ -38,20 +38,20 @@ static void append_ch(struct dewlock_string *pw, uint32_t codepoint) {
 }
 
 static void set_auth_idle(void *data) {
-  struct dewlock_state *state = data;
+  dewlock_state_t *state = data;
   state->auth_idle_timer = NULL;
   state->auth_state = AUTH_STATE_IDLE;
   damage_state(state);
 }
 
-static void cancel_input_idle(struct dewlock_state *state) {
+static void cancel_input_idle(dewlock_state_t *state) {
   if (state->input_idle_timer) {
     loop_remove_timer(state->eventloop, state->input_idle_timer);
     state->input_idle_timer = NULL;
   }
 }
 
-void schedule_auth_idle(struct dewlock_state *state) {
+void schedule_auth_idle(dewlock_state_t *state) {
   if (state->auth_idle_timer) {
     loop_remove_timer(state->eventloop, state->auth_idle_timer);
   }
@@ -60,14 +60,14 @@ void schedule_auth_idle(struct dewlock_state *state) {
 }
 
 static void clear_password(void *data) {
-  struct dewlock_state *state = data;
+  dewlock_state_t *state = data;
   state->clear_password_timer = NULL;
   state->input_state = INPUT_STATE_PRISTINE;
   clear_password_buffer(&state->password);
   damage_state(state);
 }
 
-static void schedule_password_clear(struct dewlock_state *state) {
+static void schedule_password_clear(dewlock_state_t *state) {
   if (state->clear_password_timer) {
     loop_remove_timer(state->eventloop, state->clear_password_timer);
   }
@@ -75,14 +75,14 @@ static void schedule_password_clear(struct dewlock_state *state) {
       loop_add_timer(state->eventloop, 10000, clear_password, state);
 }
 
-static void cancel_password_clear(struct dewlock_state *state) {
+static void cancel_password_clear(dewlock_state_t *state) {
   if (state->clear_password_timer) {
     loop_remove_timer(state->eventloop, state->clear_password_timer);
     state->clear_password_timer = NULL;
   }
 }
 
-static void submit_password(struct dewlock_state *state) {
+static void submit_password(dewlock_state_t *state) {
   if (state->auth_state == AUTH_STATE_VALIDATING) {
     return;
   }
@@ -100,7 +100,7 @@ static void submit_password(struct dewlock_state *state) {
   damage_state(state);
 }
 
-void dewlock_handle_key(struct dewlock_state *state, xkb_keysym_t keysym,
+void dewlock_handle_key(dewlock_state_t *state, xkb_keysym_t keysym,
                         uint32_t codepoint) {
 
   // Do not accept inputs while validating
