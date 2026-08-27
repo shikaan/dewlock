@@ -1,5 +1,6 @@
 #include "loop.h"
 #include "log.h"
+#include <assert.h>
 #include <errno.h>
 #include <limits.h>
 #include <poll.h>
@@ -129,6 +130,8 @@ void loop_poll(struct loop *loop) {
 
 void loop_add_fd(struct loop *loop, int fd, short mask,
                  void (*callback)(int fd, short mask, void *data), void *data) {
+  assert(loop && "loop must be non-null");
+  assert(callback && "callback must be non-null");
   struct loop_fd_event *event = calloc(1, sizeof(struct loop_fd_event));
   if (!event) {
     log_error("Unable to allocate memory for event", NULL);
@@ -151,6 +154,8 @@ void loop_add_fd(struct loop *loop, int fd, short mask,
 
 struct loop_timer *loop_add_timer(struct loop *loop, int ms,
                                   void (*callback)(void *data), void *data) {
+  assert(loop && "loop must be non-null");
+  assert(callback && "callback must be non-null");
   struct loop_timer *timer = calloc(1, sizeof(struct loop_timer));
   if (!timer) {
     log_error("Unable to allocate memory for timer", NULL);
@@ -175,6 +180,7 @@ struct loop_timer *loop_add_timer(struct loop *loop, int ms,
 }
 
 bool loop_remove_fd(struct loop *loop, int fd) {
+  assert(loop && "loop must be non-null");
   size_t fd_index = 0;
   struct loop_fd_event *event = NULL, *tmp_event = NULL;
   wl_list_for_each_safe(event, tmp_event, &loop->fd_events, link) {
@@ -193,6 +199,7 @@ bool loop_remove_fd(struct loop *loop, int fd) {
 }
 
 bool loop_remove_timer(struct loop *loop, struct loop_timer *remove) {
+  assert(loop && "loop must be non-null");
   struct loop_timer *timer = NULL, *tmp_timer = NULL;
   wl_list_for_each_safe(timer, tmp_timer, &loop->timers, link) {
     if (timer == remove) {

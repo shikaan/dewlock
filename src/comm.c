@@ -41,12 +41,14 @@ static bool write_full(int fd, const void *src, size_t size) {
   size_t offset = 0;
   while (offset < size) {
     ssize_t n = write(fd, &buf[offset], size - offset);
-    if (n <= 0) {
-      assert(n != 0);
+    if (n < 0) {
       if (errno == EINTR) {
         continue;
       }
       log_error("write() failed: %s", strerror(errno));
+      return false;
+    } else if (n == 0) {
+      log_error("write() failed: unexpected short write", NULL);
       return false;
     }
     offset += (size_t)n;
@@ -55,6 +57,7 @@ static bool write_full(int fd, const void *src, size_t size) {
 }
 
 ssize_t read_comm_request(char **buf_ptr) {
+  assert(buf_ptr && "buf_ptr must be non-null");
   int fd = comm[0][0];
 
   size_t size;
@@ -62,7 +65,10 @@ ssize_t read_comm_request(char **buf_ptr) {
   if (n <= 0) {
     return n;
   }
-  assert(size > 0);
+  if (size == 0) {
+    log_error("received invalid pw check request: zero size", NULL);
+    return -1;
+  }
 
   log_debug("received pw check request", NULL);
 
@@ -76,7 +82,10 @@ ssize_t read_comm_request(char **buf_ptr) {
     return -1;
   }
 
-  assert(buf[size - 1] == '\0');
+  if (buf[size - 1] != '\0') {
+    log_error("received invalid pw check request: not NUL-terminated", NULL);
+    return -1;
+  }
   *buf_ptr = buf;
   return (ssize_t)size;
 }
@@ -113,6 +122,8 @@ bool spawn_comm_child(void) {
 }
 
 bool write_comm_request(struct dewlock_string *pw) {
+  assert(pw && "pw must be non-null");
+  assert(pw->buf && "pw->buf must be non-null");
   bool result = false;
   int fd = comm[0][1];
 

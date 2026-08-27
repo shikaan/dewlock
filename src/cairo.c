@@ -1,8 +1,10 @@
 #include "cairo.h"
+#include <assert.h>
 #include <cairo/cairo.h>
 #include <stdint.h>
 
 void cairo_set_source_u32(cairo_t *cairo, uint32_t color) {
+  assert(cairo && "cairo must be non-null");
   cairo_set_source_rgba(cairo, (color >> (3 * 8) & 0xFF) / 255.0,
                         (color >> (2 * 8) & 0xFF) / 255.0,
                         (color >> (1 * 8) & 0xFF) / 255.0,

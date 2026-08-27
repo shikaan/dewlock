@@ -58,6 +58,7 @@ static void init(void) {
 }
 
 static char *join_args(char **argv, int argc) {
+  assert(argv && "argv must be non-null");
   assert(argc > 0 && "join_args requires at least one argument");
   size_t len = 0;
   int i;
@@ -168,6 +169,7 @@ char *cfg_path(void) {
 }
 
 void cfg_read(const char *path, struct dewlock_state *state) {
+  assert(state && "state must be non-null");
 #define readstr(Prop, Value)                                                 \
   if (streql(key, Value)) {                                                  \
     (Prop) = strdup(value);                                                  \
@@ -263,4 +265,7 @@ void cfg_read(const char *path, struct dewlock_state *state) {
 #undef readstr
 }
 
-void cfg_get(cfg_t **out) { *out = &cfg; }
+void cfg_get(cfg_t **out) {
+  assert(out && "out must be non-null");
+  *out = &cfg;
+}

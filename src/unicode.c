@@ -1,9 +1,11 @@
 #include "unicode.h"
+#include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
 int utf8_last_size(const char *str) {
+  assert(str && "str must be non-null");
   int len = 0;
   char *pos = strchr(str, '\0');
   while (pos > str) {
@@ -28,6 +30,7 @@ size_t utf8_chsize(uint32_t ch) {
 }
 
 size_t utf8_encode(char *str, uint32_t ch) {
+  assert(str && "str must be non-null");
   size_t len = 0;
   uint8_t first;
 
@@ -64,6 +67,7 @@ static const struct {
 };
 
 int utf8_size(const char *s) {
+  assert(s && "s must be non-null");
   uint8_t c = (uint8_t)*s;
   for (size_t i = 0; i < sizeof(sizes) / sizeof(*sizes); ++i) {
     if ((c & sizes[i].mask) == sizes[i].result) {

@@ -1,4 +1,5 @@
 #include "log.h"
+#include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
 
@@ -11,6 +12,8 @@ void log_init(log_level_t level) { current_level = level; }
 
 void _log_put(log_level_t level, const char *file, int line, const char *fmt,
               ...) {
+  assert(file && "file must be non-null");
+  assert(fmt && "fmt must be non-null");
   if (level > current_level)
     return;
 

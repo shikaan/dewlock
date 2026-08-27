@@ -1,8 +1,10 @@
 #include "password-buffer.h"
 #include "dewlock.h"
 #include "log.h"
+#include <assert.h>
 #include <errno.h>
 #include <limits.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
@@ -20,6 +22,8 @@ static long int get_page_size(void) {
 
 // password_buffer_lock expects addr to be page alligned
 static bool password_buffer_lock(char *addr, size_t size) {
+  assert((uintptr_t)addr % (uintptr_t)get_page_size() == 0 &&
+         "addr must be page-aligned");
   int retries = 5;
   while (mlock(addr, size) != 0 && retries > 0) {
     switch (errno) {
@@ -46,6 +50,8 @@ static bool password_buffer_lock(char *addr, size_t size) {
 
 // password_buffer_unlock expects addr to be page alligned
 static bool password_buffer_unlock(char *addr, size_t size) {
+  assert((uintptr_t)addr % (uintptr_t)get_page_size() == 0 &&
+         "addr must be page-aligned");
   if (mlock_supported) {
     if (munlock(addr, size) != 0) {
       log_error("Unable to munlock() password memory: %s", strerror(errno));
@@ -57,6 +63,7 @@ static bool password_buffer_unlock(char *addr, size_t size) {
 }
 
 char *password_buffer_create(size_t size) {
+  assert(size > 0 && "size must be positive");
   void *buffer;
   int result = posix_memalign(&buffer, (size_t)get_page_size(), size);
   if (result) {
@@ -75,6 +82,7 @@ char *password_buffer_create(size_t size) {
 }
 
 void password_buffer_destroy(char *buffer, size_t size) {
+  assert(buffer && "buffer must be non-null");
   memset(buffer, 0, size);
   password_buffer_unlock(buffer, size);
   free(buffer);

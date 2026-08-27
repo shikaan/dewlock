@@ -12,7 +12,6 @@
 #include "pool-buffer.h"
 #include "seat.h"
 #include "strcmp.h"
-#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
@@ -109,13 +108,22 @@ static void create_surface(struct dewlock_surface *surface) {
   surface->image = select_image(state, surface);
 
   surface->surface = wl_compositor_create_surface(state->compositor);
-  assert(surface->surface);
+  if (!surface->surface) {
+    log_error("wl_compositor_create_surface failed", NULL);
+    exit(EXIT_FAILURE);
+  }
 
   surface->child = wl_compositor_create_surface(state->compositor);
-  assert(surface->child);
+  if (!surface->child) {
+    log_error("wl_compositor_create_surface failed", NULL);
+    exit(EXIT_FAILURE);
+  }
   surface->subsurface = wl_subcompositor_get_subsurface(
       state->subcompositor, surface->child, surface->surface);
-  assert(surface->subsurface);
+  if (!surface->subsurface) {
+    log_error("wl_subcompositor_get_subsurface failed", NULL);
+    exit(EXIT_FAILURE);
+  }
   wl_subsurface_set_sync(surface->subsurface);
 
   surface->ext_session_lock_surface_v1 = ext_session_lock_v1_get_lock_surface(
