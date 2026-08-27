@@ -67,7 +67,7 @@ void initialize_pw_backend(int argc, char **argv) {
 }
 
 void run_pw_backend_child(void) {
-  assert(encpw != NULL);
+  assert(encpw != NULL && "encpw must be set before forking the pw backend child");
   while (1) {
     char *buf;
     ssize_t size = read_comm_request(&buf);

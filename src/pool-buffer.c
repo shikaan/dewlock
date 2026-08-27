@@ -48,6 +48,10 @@ static const struct wl_buffer_listener buffer_listener = {.release =
 struct pool_buffer *create_buffer(struct wl_shm *shm, struct pool_buffer *buf,
                                   int32_t width, int32_t height,
                                   uint32_t format) {
+  assert(shm && "shm must be non-null");
+  assert(buf && "buf must be non-null");
+  assert(width >= 0 && "width must be non-negative");
+  assert(height >= 0 && "height must be non-negative");
   uint32_t stride = (uint32_t)width * 4;
   size_t size = stride * (uint32_t)height;
 
@@ -81,6 +85,7 @@ struct pool_buffer *create_buffer(struct wl_shm *shm, struct pool_buffer *buf,
 }
 
 void destroy_buffer(struct pool_buffer *buffer) {
+  assert(buffer && "buffer must be non-null");
   if (buffer->buffer) {
     wl_buffer_destroy(buffer->buffer);
   }

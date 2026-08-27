@@ -2,7 +2,6 @@
 #include "dewlock.h"
 #include "log.h"
 #include "loop.h"
-#include <assert.h>
 #include <stdlib.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -30,11 +29,17 @@ static void keyboard_keymap(void *data, struct wl_keyboard *wl_keyboard,
     keymap = xkb_keymap_new_from_buffer(state->xkb.context, map_shm, size - 1,
                                         XKB_KEYMAP_FORMAT_TEXT_V1,
                                         XKB_KEYMAP_COMPILE_NO_FLAGS);
-    assert(keymap);
     munmap(map_shm, size - 1);
+    if (!keymap) {
+      log_error("Failed to compile keymap, aborting", NULL);
+      exit(1);
+    }
 
     xkb_state = xkb_state_new(keymap);
-    assert(xkb_state);
+    if (!xkb_state) {
+      log_error("Failed to create xkb_state, aborting", NULL);
+      exit(1);
+    }
     break;
   default:
     break;

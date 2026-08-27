@@ -1,4 +1,5 @@
 #include "cli.h"
+#include <assert.h>
 #include <getopt.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -77,6 +78,8 @@ static void print_error(int opt, char *const *argv) {
 }
 
 void cli_parse(int argc, char *const *argv) {
+  assert(argc > 0 && "argc must be positive");
+  assert(argv && "argv must be non-null");
   int longind;
 
   int opt;
@@ -108,6 +111,9 @@ void cli_parse(int argc, char *const *argv) {
   }
 }
 
-void cli_get(cli_opts_t **opts) { *opts = &cli_opts; }
+void cli_get(cli_opts_t **opts) {
+  assert(opts && "opts must be non-null");
+  *opts = &cli_opts;
+}
 
 #undef len

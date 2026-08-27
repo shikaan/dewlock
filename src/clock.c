@@ -1,12 +1,14 @@
 #include "clock.h"
 
 #include "loop.h"
+#include <assert.h>
 #include <stdio.h>
 #include <time.h>
 
 void schedule_clock_timer(struct dewlock_state *state);
 
 void state_set_time(struct dewlock_state *state) {
+  assert(state && "state must be non-null");
   static char clock[8] = {0};
   static char date[256] = {0};
   static char month[32] = {0};
@@ -30,6 +32,7 @@ static void set_time(void *data) {
 }
 
 void schedule_clock_timer(struct dewlock_state *state) {
+  assert(state && "state must be non-null");
   if (state->clock_timer) {
     loop_remove_timer(state->eventloop, state->clock_timer);
   }
@@ -38,6 +41,7 @@ void schedule_clock_timer(struct dewlock_state *state) {
 }
 
 void cancel_clock_timer(struct dewlock_state *state) {
+  assert(state && "state must be non-null");
   if (state->clock_timer) {
     loop_remove_timer(state->eventloop, state->clock_timer);
     state->clock_timer = NULL;

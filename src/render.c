@@ -27,6 +27,7 @@ static const struct wl_callback_listener surface_frame_listener = {
 static bool render_frame(struct dewlock_surface *surface);
 
 void render(struct dewlock_surface *surface) {
+  assert(surface && "surface must be non-null");
   struct dewlock_state *state = surface->state;
   cfg_t *cfg;
   cfg_get(&cfg);
@@ -104,6 +105,8 @@ static void init_text(cairo_t *cairo, double width, double y,
                       cairo_text_extents_t *extents) {
   (void)width;
   (void)y;
+  assert(cairo && "cairo must be non-null");
+  assert(text && "text must be non-null");
   assert(extents && "extents must be non-null");
 
   static cairo_font_options_t *font_options = NULL;
@@ -163,6 +166,8 @@ static inline size_t min3u(size_t a, size_t b, size_t c) {
 static inline void set_password(cairo_t *c, struct dewlock_state *state,
                                 struct dewlock_text opts, double w, double maxw,
                                 char *chars, size_t nchars) {
+  assert(chars && "chars must be non-null");
+  assert(nchars > 0 && "nchars must be positive");
   static size_t last_len;
   cairo_text_extents_t glyph_extents;
   init_text(c, w, 0, opts, "*", &glyph_extents);

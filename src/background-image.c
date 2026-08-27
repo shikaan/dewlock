@@ -5,6 +5,7 @@
 #include <string.h>
 
 enum background_mode parse_background_mode(const char *mode) {
+  assert(mode && "mode must be non-null");
   if (strcmp(mode, "stretch") == 0) {
     return BACKGROUND_MODE_STRETCH;
   } else if (strcmp(mode, "fill") == 0) {
@@ -23,6 +24,7 @@ enum background_mode parse_background_mode(const char *mode) {
 }
 
 cairo_surface_t *load_background_image(const char *path) {
+  assert(path && "path must be non-null");
   cairo_surface_t *image = cairo_image_surface_create_from_png(path);
   if (!image) {
     log_error("Failed to read background image.", NULL);
@@ -39,6 +41,10 @@ cairo_surface_t *load_background_image(const char *path) {
 void render_background_image(cairo_t *cairo, cairo_surface_t *image,
                              enum background_mode mode, int buffer_width,
                              int buffer_height) {
+  assert(cairo && "cairo must be non-null");
+  assert(image && "image must be non-null");
+  assert(buffer_width > 0 && "buffer_width must be positive");
+  assert(buffer_height > 0 && "buffer_height must be positive");
   double width = cairo_image_surface_get_width(image);
   double height = cairo_image_surface_get_height(image);
 
@@ -102,7 +108,7 @@ void render_background_image(cairo_t *cairo, cairo_surface_t *image,
   case BACKGROUND_MODE_SOLID_COLOR:
   case BACKGROUND_MODE_INVALID:
   default:
-    assert(0);
+    assert(0 && "unreachable: invalid background mode");
     break;
   }
   cairo_paint(cairo);
