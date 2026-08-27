@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include <wayland-client.h>
 
-static dewlock_state_t g_state;
+static dewlock_state_t state;
 
 static const struct ext_session_lock_surface_v1_listener
     ext_session_lock_surface_v1_listener;
@@ -134,7 +134,8 @@ static void create_surface(dewlock_surface_t *surface) {
 
   cfg_t *cfg;
   cfg_get(&cfg);
-  if (surface_is_opaque(surface) && cfg->background.mode != BACKGROUND_MODE_CENTER &&
+  if (surface_is_opaque(surface) &&
+      cfg->background.mode != BACKGROUND_MODE_CENTER &&
       cfg->background.mode != BACKGROUND_MODE_FIT) {
     struct wl_region *region =
         wl_compositor_create_region(surface->state->compositor);
@@ -200,7 +201,6 @@ static void handle_wl_output_mode(void *data, struct wl_output *output,
   (void)width;
   (void)height;
   (void)refresh;
-  // Who cares
 }
 
 static void handle_wl_output_done(void *data, struct wl_output *output) {
@@ -234,7 +234,6 @@ static void handle_wl_output_description(void *data, struct wl_output *output,
   (void)data;
   (void)output;
   (void)description;
-  // Who cares
 }
 
 struct wl_output_listener _wl_output_listener = {
@@ -260,7 +259,8 @@ ext_session_lock_v1_handle_finished(void *data,
   (void)data;
   (void)lock;
   log_error("Failed to lock session -- "
-            "is another lockscreen running?", NULL);
+            "is another lockscreen running?",
+            NULL);
   exit(2);
 }
 
@@ -346,8 +346,8 @@ static void display_in(int fd, short mask, void *data) {
   (void)fd;
   (void)mask;
   (void)data;
-  if (wl_display_dispatch(g_state.display) == -1) {
-    g_state.run_display = false;
+  if (wl_display_dispatch(state.display) == -1) {
+    state.run_display = false;
   }
 }
 
@@ -361,12 +361,12 @@ static void comm_in(int fd, short mask, void *data) {
     }
     if (auth_success) {
       // Authentication succeeded
-      g_state.run_display = false;
+      state.run_display = false;
     } else {
-      g_state.auth_state = AUTH_STATE_INVALID;
-      schedule_auth_idle(&g_state);
-      ++g_state.failed_attempts;
-      damage_state(&g_state);
+      state.auth_state = AUTH_STATE_INVALID;
+      schedule_auth_idle(&state);
+      ++state.failed_attempts;
+      damage_state(&state);
     }
   } else if (mask & (POLLHUP | POLLERR)) {
     log_error("Password checking subprocess crashed; exiting.", NULL);
@@ -378,7 +378,7 @@ static void term_in(int fd, short mask, void *data) {
   (void)fd;
   (void)mask;
   (void)data;
-  g_state.run_display = false;
+  state.run_display = false;
 }
 
 int main(int argc, char **argv) {
@@ -393,10 +393,10 @@ int main(int argc, char **argv) {
   initialize_pw_backend(argc, argv);
   srand((unsigned int)time(NULL));
 
-  g_state.failed_attempts = 0;
-  wl_list_init(&g_state.images);
+  state.failed_attempts = 0;
+  wl_list_init(&state.images);
 
-  g_state.username = getpwuid(getuid())->pw_name;
+  state.username = getpwuid(getuid())->pw_name;
 
   char *resolved_config_path = NULL;
   const char *config_path = opts->config;
@@ -407,18 +407,18 @@ int main(int argc, char **argv) {
   if (config_path) {
     log_debug("Found config at %s", config_path);
   }
-  cfg_read(config_path, &g_state);
+  cfg_read(config_path, &state);
   free(resolved_config_path);
 
-  g_state.password.len = 0;
-  g_state.password.cap = 1024;
-  g_state.password.buf = password_buffer_create(g_state.password.cap);
-  if (!g_state.password.buf) {
+  state.password.len = 0;
+  state.password.cap = 1024;
+  state.password.buf = password_buffer_create(state.password.cap);
+  if (!state.password.buf) {
     return EXIT_FAILURE;
   }
-  g_state.password.buf[0] = 0;
+  state.password.buf[0] = 0;
 
-  state_set_time(&g_state);
+  state_set_time(&state);
 
   if (pipe(sigusr_fds) != 0) {
     log_error("Failed to pipe", NULL);
@@ -429,58 +429,44 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-  wl_list_init(&g_state.surfaces);
-  g_state.xkb.context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
-  g_state.display = wl_display_connect(NULL);
-  if (!g_state.display) {
+  wl_list_init(&state.surfaces);
+  state.xkb.context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+  state.display = wl_display_connect(NULL);
+  if (!state.display) {
     log_error("Unable to connect to the compositor. "
               "If your compositor is running, check or set the "
-              "WAYLAND_DISPLAY environment variable.", NULL);
+              "WAYLAND_DISPLAY environment variable.",
+              NULL);
     return EXIT_FAILURE;
   }
-  g_state.eventloop = loop_create();
+  state.eventloop = loop_create();
 
-  struct wl_registry *registry = wl_display_get_registry(g_state.display);
-  wl_registry_add_listener(registry, &registry_listener, &g_state);
-  if (wl_display_roundtrip(g_state.display) == -1) {
+  struct wl_registry *registry = wl_display_get_registry(state.display);
+  wl_registry_add_listener(registry, &registry_listener, &state);
+  if (wl_display_roundtrip(state.display) == -1) {
     log_error("wl_display_roundtrip() failed", NULL);
     return EXIT_FAILURE;
   }
 
-  if (!g_state.compositor) {
-    log_error("Missing wl_compositor", NULL);
+  if (!state.compositor || !state.subcompositor || !state.shm || !state.ext_session_lock_manager_v1) {
+    log_error("Missing required global", NULL);
     return 1;
   }
 
-  if (!g_state.subcompositor) {
-    log_error("Missing wl_subcompositor", NULL);
-    return 1;
-  }
+  state.ext_session_lock_v1 =
+      ext_session_lock_manager_v1_lock(state.ext_session_lock_manager_v1);
+  ext_session_lock_v1_add_listener(state.ext_session_lock_v1,
+                                   &ext_session_lock_v1_listener, &state);
 
-  if (!g_state.shm) {
-    log_error("Missing wl_shm", NULL);
-    return 1;
-  }
-
-  if (!g_state.ext_session_lock_manager_v1) {
-    log_error("Missing ext-session-lock-v1", NULL);
-    return 1;
-  }
-
-  g_state.ext_session_lock_v1 =
-      ext_session_lock_manager_v1_lock(g_state.ext_session_lock_manager_v1);
-  ext_session_lock_v1_add_listener(g_state.ext_session_lock_v1,
-                                   &ext_session_lock_v1_listener, &g_state);
-
-  if (wl_display_roundtrip(g_state.display) == -1) {
+  if (wl_display_roundtrip(state.display) == -1) {
     return 1;
   }
 
   dewlock_surface_t *surface;
-  wl_list_for_each(surface, &g_state.surfaces, link) { create_surface(surface); }
+  wl_list_for_each(surface, &state.surfaces, link) { create_surface(surface); }
 
-  while (!g_state.locked) {
-    if (wl_display_dispatch(g_state.display) < 0) {
+  while (!state.locked) {
+    if (wl_display_dispatch(state.display) < 0) {
       log_error("wl_display_dispatch() failed", NULL);
       return 2;
     }
@@ -498,14 +484,14 @@ int main(int argc, char **argv) {
     daemonize();
   }
 
-  loop_add_fd(g_state.eventloop, wl_display_get_fd(g_state.display), POLLIN,
+  loop_add_fd(state.eventloop, wl_display_get_fd(state.display), POLLIN,
               display_in, NULL);
 
-  loop_add_fd(g_state.eventloop, get_comm_reply_fd(), POLLIN, comm_in, NULL);
+  loop_add_fd(state.eventloop, get_comm_reply_fd(), POLLIN, comm_in, NULL);
 
-  loop_add_fd(g_state.eventloop, sigusr_fds[0], POLLIN, term_in, NULL);
+  loop_add_fd(state.eventloop, sigusr_fds[0], POLLIN, term_in, NULL);
 
-  schedule_clock_timer(&g_state);
+  schedule_clock_timer(&state);
 
   struct sigaction sa;
   sa.sa_handler = do_sigusr;
@@ -513,18 +499,18 @@ int main(int argc, char **argv) {
   sa.sa_flags = SA_RESTART;
   sigaction(SIGUSR1, &sa, NULL);
 
-  g_state.run_display = true;
-  while (g_state.run_display) {
+  state.run_display = true;
+  while (state.run_display) {
     errno = 0;
-    if (wl_display_flush(g_state.display) == -1 && errno != EAGAIN) {
+    if (wl_display_flush(state.display) == -1 && errno != EAGAIN) {
       break;
     }
-    loop_poll(g_state.eventloop);
+    loop_poll(state.eventloop);
   }
 
-  cancel_clock_timer(&g_state);
-  ext_session_lock_v1_unlock_and_destroy(g_state.ext_session_lock_v1);
-  wl_display_roundtrip(g_state.display);
+  cancel_clock_timer(&state);
+  ext_session_lock_v1_unlock_and_destroy(state.ext_session_lock_v1);
+  wl_display_roundtrip(state.display);
 
   return 0;
 }
