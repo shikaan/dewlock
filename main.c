@@ -414,8 +414,7 @@ int main(int argc, char **argv) {
 
   state.password.len = 0;
   state.password.cap = 1024;
-  state.password.buf = password_buffer_create(state.password.cap);
-  if (!state.password.buf) {
+  if (password_buffer_create(state.password.cap, &state.password.buf) != OK) {
     return EXIT_FAILURE;
   }
   state.password.buf[0] = 0;
