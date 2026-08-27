@@ -10,6 +10,7 @@
 #include "log.h"
 #include "loop.h"
 #include "password-buffer.h"
+#include "result.h"
 #include "seat.h"
 #include "strcmp.h"
 #include <errno.h>
@@ -357,7 +358,7 @@ static void comm_in(int fd, short mask, void *data) {
   (void)data;
   if (mask & POLLIN) {
     bool auth_success = false;
-    if (!read_comm_reply(&auth_success)) {
+    if (read_comm_reply(&auth_success) != OK) {
       exit(EXIT_FAILURE);
     }
     if (auth_success) {

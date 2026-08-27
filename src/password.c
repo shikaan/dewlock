@@ -1,6 +1,7 @@
 #include "comm.h"
 #include "dewlock.h"
 #include "loop.h"
+#include "result.h"
 #include "seat.h"
 #include "unicode.h"
 #include <assert.h>
@@ -92,7 +93,7 @@ static void submit_password(dewlock_state_t *state) {
   cancel_password_clear(state);
   cancel_input_idle(state);
 
-  if (!write_comm_request(&state->password)) {
+  if (write_comm_request(&state->password) != OK) {
     state->auth_state = AUTH_STATE_INVALID;
     schedule_auth_idle(state);
   }

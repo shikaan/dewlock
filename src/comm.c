@@ -2,6 +2,7 @@
 #include "dewlock.h"
 #include "log.h"
 #include "password-buffer.h"
+#include "result.h"
 #include <assert.h>
 #include <errno.h>
 #include <signal.h>
@@ -56,57 +57,63 @@ static bool write_full(int fd, const void *src, size_t size) {
   return true;
 }
 
-ssize_t read_comm_request(char **buf_ptr) {
+result_t read_comm_request(char **buf_ptr, size_t *size) {
   assert(buf_ptr && "buf_ptr must be non-null");
+  assert(size && "size must be non-null");
   int fd = comm[0][0];
 
-  size_t size;
-  ssize_t n = read_full(fd, &size, sizeof(size));
-  if (n <= 0) {
-    return n;
+  ssize_t n = read_full(fd, size, sizeof(*size));
+  if (n == 0) {
+    return ERR_COMM_EOF;
   }
-  if (size == 0) {
+  if (n < 0) {
+    return ERR_COMM_READ;
+  }
+  if (*size == 0) {
     log_error("received invalid pw check request: zero size", NULL);
-    return -1;
+    return ERR_COMM_INVALID;
   }
 
   log_debug("received pw check request", NULL);
 
-  char *buf = password_buffer_create(size);
+  char *buf = password_buffer_create(*size);
   if (!buf) {
-    return -1;
+    return ERROR;
   }
 
-  if (read_full(fd, buf, size) <= 0) {
+  if (read_full(fd, buf, *size) <= 0) {
     log_error("failed to read pw: %s", strerror(errno));
-    return -1;
+    return ERR_COMM_READ;
   }
 
-  if (buf[size - 1] != '\0') {
+  if (buf[*size - 1] != '\0') {
     log_error("received invalid pw check request: not NUL-terminated", NULL);
-    return -1;
+    return ERR_COMM_INVALID;
   }
   *buf_ptr = buf;
-  return (ssize_t)size;
+  return OK;
 }
 
-bool write_comm_reply(bool success) {
-  return write_full(comm[1][1], &success, sizeof(success));
+result_t write_comm_reply(bool success) {
+  if (!write_full(comm[1][1], &success, sizeof(success))) {
+    return ERR_COMM_WRITE;
+  }
+  return OK;
 }
 
-bool spawn_comm_child(void) {
+result_t spawn_comm_child(void) {
   if (pipe(comm[0]) != 0) {
     log_error("failed to create pipe: %s", strerror(errno));
-    return false;
+    return ERR_COMM_PIPE;
   }
   if (pipe(comm[1]) != 0) {
     log_error("failed to create pipe: %s", strerror(errno));
-    return false;
+    return ERR_COMM_PIPE;
   }
   pid_t child = fork();
   if (child < 0) {
     log_error("failed to fork: %s", strerror(errno));
-    return false;
+    return ERR_COMM_FORK;
   } else if (child == 0) {
     struct sigaction sa = {
         .sa_handler = SIG_IGN,
@@ -118,13 +125,13 @@ bool spawn_comm_child(void) {
   }
   close(comm[0][0]);
   close(comm[1][1]);
-  return true;
+  return OK;
 }
 
-bool write_comm_request(dewlock_string_t *pw) {
+result_t write_comm_request(dewlock_string_t *pw) {
   assert(pw && "pw must be non-null");
   assert(pw->buf && "pw->buf must be non-null");
-  bool result = false;
+  result_t result = ERR_COMM_WRITE;
   int fd = comm[0][1];
 
   size_t size = pw->len + 1;
@@ -138,19 +145,19 @@ bool write_comm_request(dewlock_string_t *pw) {
     goto out;
   }
 
-  result = true;
+  result = OK;
 
 out:
   clear_password_buffer(pw);
   return result;
 }
 
-bool read_comm_reply(bool *auth_success) {
+result_t read_comm_reply(bool *auth_success) {
   if (read_full(comm[1][0], auth_success, sizeof(*auth_success)) <= 0) {
     log_error("Failed to read pw result", NULL);
-    return false;
+    return ERR_COMM_READ;
   }
-  return true;
+  return OK;
 }
 
 int get_comm_reply_fd(void) { return comm[1][0]; }
