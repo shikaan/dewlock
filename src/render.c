@@ -2,7 +2,7 @@
 #include "cairo.h"
 #include "config.h"
 #include "dewlock.h"
-#include "log.h"
+#include "result.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,19 +43,17 @@ void render(dewlock_surface_t *surface) {
     return;
   }
 
-  bool need_destroy = false;
-  pool_buffer_t buffer;
-
   if (buffer_width != surface->last_buffer_width ||
       buffer_height != surface->last_buffer_height) {
-    need_destroy = true;
-    if (!create_buffer(state->shm, &buffer, buffer_width, buffer_height,
-                       WL_SHM_FORMAT_ARGB8888)) {
-      log_error("Failed to create new buffer for frame background.", NULL);
+    ctx_t *background;
+    result_t res = ctx_get_background(state->shm, (uint32_t)buffer_width,
+                                      (uint32_t)buffer_height,
+                                      surface->buffers, &background);
+    if (res != OK) {
       return;
     }
 
-    cairo_t *cairo = buffer.cairo;
+    cairo_t *cairo = background->cairo;
     cairo_set_antialias(cairo, CAIRO_ANTIALIAS_BEST);
 
     cairo_save(cairo);
@@ -70,9 +68,8 @@ void render(dewlock_surface_t *surface) {
     cairo_restore(cairo);
     cairo_identity_matrix(cairo);
 
-    wl_surface_attach(surface->surface, buffer.buffer, 0, 0);
+    wl_surface_attach(surface->surface, background->buffer, 0, 0);
     wl_surface_damage_buffer(surface->surface, 0, 0, INT32_MAX, INT32_MAX);
-    need_destroy = true;
 
     surface->last_buffer_width = buffer_width;
     surface->last_buffer_height = buffer_height;
@@ -87,10 +84,6 @@ void render(dewlock_surface_t *surface) {
   surface->frame = wl_surface_frame(surface->surface);
   wl_callback_add_listener(surface->frame, &surface_frame_listener, surface);
   wl_surface_commit(surface->surface);
-
-  if (need_destroy) {
-    destroy_buffer(&buffer);
-  }
 }
 
 struct dewlock_text {
@@ -283,11 +276,11 @@ static bool render_frame(dewlock_surface_t *surface) {
   int subsurf_xpos = (int)surface->width / 2 - buffer_width / 2;
   int subsurf_ypos = 0;
 
-  pool_buffer_t *buffer =
-      get_next_buffer(state->shm, surface->indicator_buffers,
-                      (uint32_t)buffer_width, (uint32_t)buffer_height);
-  if (buffer == NULL) {
-    log_error("No buffer", NULL);
+  ctx_t *buffer;
+  result_t res = ctx_get_indicator(state->shm, (uint32_t)buffer_width,
+                                   (uint32_t)buffer_height, surface->buffers,
+                                   &buffer);
+  if (res != OK) {
     return false;
   }
 

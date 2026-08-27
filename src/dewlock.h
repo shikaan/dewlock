@@ -1,6 +1,6 @@
 #pragma once
 #include "cairo.h"
-#include "pool-buffer.h"
+#include "ctx.h"
 #include "seat.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -61,7 +61,7 @@ typedef struct {
   struct wl_surface *child;   // indicator surface made into subsurface
   struct wl_subsurface *subsurface;
   struct ext_session_lock_surface_v1 *ext_session_lock_surface_v1;
-  pool_buffer_t indicator_buffers[2];
+  ctx_t buffers[CTX_POOL_SIZE];
   bool created;
   bool dirty;
   uint32_t width, height;

@@ -4,6 +4,7 @@ build
 
 **/*.o
 main
+.cache
 
 protocols/*.h
 protocols/*.c

@@ -136,7 +136,7 @@ main: CFLAGS += -Isrc $(DEPS_CFLAGS) \
 	-isystem protocols -DVERSION='"$(VERSION)"' -DSHA='"$(SHA)"'
 main: LDLIBS += $(DEPS_LIBS) $(PW_BACKEND_LIBS) -lm -lrt
 main: main.o protocols/ext-session-lock-v1-protocol.o src/background-image.o \
-	src/cairo.o src/cli.o src/clock.o src/comm.o src/config.o src/log.o \
-	src/loop.o src/password-buffer.o src/password.o src/pool-buffer.o \
+	src/cairo.o src/cli.o src/clock.o src/comm.o src/config.o src/ctx.o \
+	src/log.o src/loop.o src/password-buffer.o src/password.o \
 	src/render.o src/seat.o src/unicode.o $(PW_BACKEND)
 	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
