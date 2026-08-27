@@ -76,9 +76,10 @@ result_t read_comm_request(char **buf_ptr, size_t *size) {
 
   log_debug("received pw check request", NULL);
 
-  char *buf = password_buffer_create(*size);
-  if (!buf) {
-    return ERROR;
+  char *buf;
+  result_t res = password_buffer_create(*size, &buf);
+  if (res != OK) {
+    return res;
   }
 
   if (read_full(fd, buf, *size) <= 0) {

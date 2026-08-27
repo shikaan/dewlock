@@ -17,5 +17,9 @@ typedef enum {
   ERR_COMM_EOF,
   ERR_COMM_INVALID,
 
+  ERR_PW,
+  ERR_PW_ALLOC,
+  ERR_PW_LOCK,
+
   RESULTS
 } result_t;
