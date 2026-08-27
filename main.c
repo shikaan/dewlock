@@ -4,12 +4,12 @@
 #include "clock.h"
 #include "comm.h"
 #include "config.h"
+#include "ctx.h"
 #include "dewlock.h"
 #include "ext-session-lock-v1-client-protocol.h"
 #include "log.h"
 #include "loop.h"
 #include "password-buffer.h"
-#include "pool-buffer.h"
 #include "seat.h"
 #include "strcmp.h"
 #include <errno.h>
@@ -18,6 +18,7 @@
 #include <pwd.h>
 #include <signal.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,6 +26,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
+#include <wayland-client-protocol.h>
 #include <wayland-client.h>
 
 static dewlock_state_t state;
@@ -84,8 +86,7 @@ static void destroy_surface(dewlock_surface_t *surface) {
   if (surface->surface != NULL) {
     wl_surface_destroy(surface->surface);
   }
-  destroy_buffer(&surface->indicator_buffers[0]);
-  destroy_buffer(&surface->indicator_buffers[1]);
+  ctx_deinit(surface->buffers);
   wl_output_release(surface->output);
   free(surface);
 }
@@ -103,23 +104,23 @@ static bool surface_is_opaque(dewlock_surface_t *surface) {
 }
 
 static void create_surface(dewlock_surface_t *surface) {
-  dewlock_state_t *state = surface->state;
+  dewlock_state_t *s = surface->state;
 
-  surface->image = select_image(state, surface);
+  surface->image = select_image(s, surface);
 
-  surface->surface = wl_compositor_create_surface(state->compositor);
+  surface->surface = wl_compositor_create_surface(s->compositor);
   if (!surface->surface) {
     log_error("wl_compositor_create_surface failed", NULL);
     exit(EXIT_FAILURE);
   }
 
-  surface->child = wl_compositor_create_surface(state->compositor);
+  surface->child = wl_compositor_create_surface(s->compositor);
   if (!surface->child) {
     log_error("wl_compositor_create_surface failed", NULL);
     exit(EXIT_FAILURE);
   }
   surface->subsurface = wl_subcompositor_get_subsurface(
-      state->subcompositor, surface->child, surface->surface);
+      s->subcompositor, surface->child, surface->surface);
   if (!surface->subsurface) {
     log_error("wl_subcompositor_get_subsurface failed", NULL);
     exit(EXIT_FAILURE);
@@ -127,7 +128,7 @@ static void create_surface(dewlock_surface_t *surface) {
   wl_subsurface_set_sync(surface->subsurface);
 
   surface->ext_session_lock_surface_v1 = ext_session_lock_v1_get_lock_surface(
-      state->ext_session_lock_v1, surface->surface, surface->output);
+      s->ext_session_lock_v1, surface->surface, surface->output);
   ext_session_lock_surface_v1_add_listener(
       surface->ext_session_lock_surface_v1,
       &ext_session_lock_surface_v1_listener, surface);
@@ -163,9 +164,9 @@ static const struct ext_session_lock_surface_v1_listener
         .configure = ext_session_lock_surface_v1_handle_configure,
 };
 
-void damage_state(dewlock_state_t *state) {
+void damage_state(dewlock_state_t *s) {
   dewlock_surface_t *surface;
-  wl_list_for_each(surface, &state->surfaces, link) {
+  wl_list_for_each(surface, &s->surfaces, link) {
     surface->dirty = true;
     render(surface);
   }
@@ -185,7 +186,7 @@ static void handle_wl_output_geometry(void *data, struct wl_output *wl_output,
   (void)model;
   (void)transform;
   dewlock_surface_t *surface = data;
-  surface->subpixel = subpixel;
+  surface->subpixel = (enum wl_output_subpixel)subpixel;
   if (surface->state->run_display) {
     surface->dirty = true;
     render(surface);
@@ -249,8 +250,8 @@ static void
 ext_session_lock_v1_handle_locked(void *data,
                                   struct ext_session_lock_v1 *lock) {
   (void)lock;
-  dewlock_state_t *state = data;
-  state->locked = true;
+  dewlock_state_t *s = data;
+  s->locked = true;
 }
 
 static void
@@ -274,31 +275,31 @@ static void handle_global(void *data, struct wl_registry *registry,
                           uint32_t name, const char *interface,
                           uint32_t version) {
   (void)version;
-  dewlock_state_t *state = data;
+  dewlock_state_t *s = data;
   if (strcmp(interface, wl_compositor_interface.name) == 0) {
-    state->compositor =
+    s->compositor =
         wl_registry_bind(registry, name, &wl_compositor_interface, 4);
   } else if (strcmp(interface, wl_subcompositor_interface.name) == 0) {
-    state->subcompositor =
+    s->subcompositor =
         wl_registry_bind(registry, name, &wl_subcompositor_interface, 1);
   } else if (strcmp(interface, wl_shm_interface.name) == 0) {
-    state->shm = wl_registry_bind(registry, name, &wl_shm_interface, 1);
+    s->shm = wl_registry_bind(registry, name, &wl_shm_interface, 1);
   } else if (strcmp(interface, wl_seat_interface.name) == 0) {
     struct wl_seat *seat =
         wl_registry_bind(registry, name, &wl_seat_interface, 4);
     dewlock_seat_t *dewlock_seat = calloc(1, sizeof(dewlock_seat_t));
-    dewlock_seat->state = state;
+    dewlock_seat->state = s;
     wl_seat_add_listener(seat, &seat_listener, dewlock_seat);
   } else if (strcmp(interface, wl_output_interface.name) == 0) {
     dewlock_surface_t *surface = calloc(1, sizeof(dewlock_surface_t));
-    surface->state = state;
+    surface->state = s;
     surface->output = wl_registry_bind(registry, name, &wl_output_interface, 4);
     surface->output_global_name = name;
     wl_output_add_listener(surface->output, &_wl_output_listener, surface);
-    wl_list_insert(&state->surfaces, &surface->link);
+    wl_list_insert(&s->surfaces, &surface->link);
   } else if (strcmp(interface, ext_session_lock_manager_v1_interface.name) ==
              0) {
-    state->ext_session_lock_manager_v1 = wl_registry_bind(
+    s->ext_session_lock_manager_v1 = wl_registry_bind(
         registry, name, &ext_session_lock_manager_v1_interface, 1);
   }
 }
@@ -306,9 +307,9 @@ static void handle_global(void *data, struct wl_registry *registry,
 static void handle_global_remove(void *data, struct wl_registry *registry,
                                  uint32_t name) {
   (void)registry;
-  dewlock_state_t *state = data;
+  dewlock_state_t *s = data;
   dewlock_surface_t *surface;
-  wl_list_for_each(surface, &state->surfaces, link) {
+  wl_list_for_each(surface, &s->surfaces, link) {
     if (surface->output_global_name == name) {
       destroy_surface(surface);
       break;
@@ -328,11 +329,11 @@ void do_sigusr(int sig) {
   (void)write(sigusr_fds[1], "1", 1);
 }
 
-static cairo_surface_t *select_image(dewlock_state_t *state,
+static cairo_surface_t *select_image(dewlock_state_t *s,
                                      dewlock_surface_t *surface) {
   dewlock_image_t *image;
   cairo_surface_t *default_image = NULL;
-  wl_list_for_each(image, &state->images, link) {
+  wl_list_for_each(image, &s->images, link) {
     if (lenient_strcmp(image->output_name, surface->output_name) == 0) {
       return image->cairo_surface;
     } else if (!image->output_name) {
@@ -448,7 +449,8 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-  if (!state.compositor || !state.subcompositor || !state.shm || !state.ext_session_lock_manager_v1) {
+  if (!state.compositor || !state.subcompositor || !state.shm ||
+      !state.ext_session_lock_manager_v1) {
     log_error("Missing required global", NULL);
     return 1;
   }

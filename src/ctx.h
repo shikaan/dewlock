@@ -1,8 +1,14 @@
 #pragma once
+#include "result.h"
 #include <cairo/cairo.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <wayland-client.h>
+
+// pool[0] holds the background context, recreated only when the surface is
+// resized. pool[1] and pool[2] are double-buffered and hold the indicator
+// context, redrawn on every frame.
+enum { CTX_POOL_SIZE = 3 };
 
 typedef struct {
   struct wl_buffer *buffer;
@@ -12,10 +18,12 @@ typedef struct {
   void *data;
   size_t size;
   bool busy;
-} pool_buffer_t;
+} ctx_t;
 
-pool_buffer_t *create_buffer(struct wl_shm *shm, pool_buffer_t *buf,
-                             int32_t width, int32_t height, uint32_t format);
-pool_buffer_t *get_next_buffer(struct wl_shm *shm, pool_buffer_t pool[static 2],
-                               uint32_t width, uint32_t height);
-void destroy_buffer(pool_buffer_t *buffer);
+result_t ctx_get_background(struct wl_shm *shm, uint32_t width,
+                            uint32_t height, ctx_t pool[static CTX_POOL_SIZE],
+                            ctx_t **ctx);
+result_t ctx_get_indicator(struct wl_shm *shm, uint32_t width,
+                           uint32_t height, ctx_t pool[static CTX_POOL_SIZE],
+                           ctx_t **ctx);
+void ctx_deinit(ctx_t pool[static CTX_POOL_SIZE]);
