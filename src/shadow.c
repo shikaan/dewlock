@@ -17,6 +17,7 @@
 #include "dewlock.h"
 #include "log.h"
 #include "password-buffer.h"
+#include "result.h"
 
 char *encpw = NULL;
 
@@ -57,7 +58,7 @@ void initialize_pw_backend(int argc, char **argv) {
   /* This code does not run as root */
   log_debug("Prepared to authorize user %s", pwent->pw_name);
 
-  if (!spawn_comm_child()) {
+  if (spawn_comm_child() != OK) {
     exit(EXIT_FAILURE);
   }
 
@@ -70,15 +71,16 @@ void run_pw_backend_child(void) {
   assert(encpw != NULL && "encpw must be set before forking the pw backend child");
   while (1) {
     char *buf;
-    ssize_t size = read_comm_request(&buf);
-    if (size < 0) {
-      exit(EXIT_FAILURE);
-    } else if (size == 0) {
+    size_t size;
+    result_t res = read_comm_request(&buf, &size);
+    if (res == ERR_COMM_EOF) {
       break;
+    } else if (res != OK) {
+      exit(EXIT_FAILURE);
     }
 
     const char *c = crypt(buf, encpw);
-    password_buffer_destroy(buf, (size_t)size);
+    password_buffer_destroy(buf, size);
     buf = NULL;
 
     if (c == NULL) {
@@ -87,7 +89,7 @@ void run_pw_backend_child(void) {
     }
     bool success = strcmp(c, encpw) == 0;
 
-    if (!write_comm_reply(success)) {
+    if (write_comm_reply(success) != OK) {
       exit(EXIT_FAILURE);
     }
 

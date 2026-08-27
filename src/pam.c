@@ -3,6 +3,7 @@
 #include "dewlock.h"
 #include "log.h"
 #include "password-buffer.h"
+#include "result.h"
 #include <errno.h>
 #include <pwd.h>
 #include <security/pam_appl.h>
@@ -19,7 +20,7 @@ void initialize_pw_backend(int argc, char **argv) {
               argv[0]);
     exit(EXIT_FAILURE);
   }
-  if (!spawn_comm_child()) {
+  if (spawn_comm_child() != OK) {
     exit(EXIT_FAILURE);
   }
 }
@@ -111,16 +112,17 @@ void run_pw_backend_child(void) {
 
   int pam_status = PAM_SUCCESS;
   while (1) {
-    ssize_t size = read_comm_request(&pw_buf);
-    if (size < 0) {
-      exit(EXIT_FAILURE);
-    } else if (size == 0) {
+    size_t size;
+    result_t res = read_comm_request(&pw_buf, &size);
+    if (res == ERR_COMM_EOF) {
       break;
+    } else if (res != OK) {
+      exit(EXIT_FAILURE);
     }
 
     state.password = pw_buf;
     pam_status = pam_authenticate(auth_handle, 0);
-    password_buffer_destroy(pw_buf, (size_t)size);
+    password_buffer_destroy(pw_buf, size);
     pw_buf = NULL;
     state.password = NULL;
 
@@ -129,7 +131,7 @@ void run_pw_backend_child(void) {
       log_error("pam_authenticate failed: %s", get_pam_auth_error(pam_status));
     }
 
-    if (!write_comm_reply(success)) {
+    if (write_comm_reply(success) != OK) {
       exit(EXIT_FAILURE);
     }
 
