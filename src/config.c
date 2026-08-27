@@ -79,12 +79,12 @@ static char *join_args(char **argv, int argc) {
 // Loads the background image(s) referenced by cfg.background.path into
 // state->images. A no-op if no path was set (no CLI flag sets this field,
 // so it only ever comes from the config file).
-static void load_image(struct dewlock_state *state) {
+static void load_image(dewlock_state_t *state) {
   char *raw_image = cfg.background.path;
   if (!raw_image)
     return;
   // [[<output>]:]<path>
-  struct dewlock_image *image = calloc(1, sizeof(struct dewlock_image));
+  dewlock_image_t *image = calloc(1, sizeof(dewlock_image_t));
   char *separator = strchr(raw_image, ':');
   if (separator) {
     *separator = '\0';
@@ -95,7 +95,7 @@ static void load_image(struct dewlock_state *state) {
     image->path = strdup(raw_image);
   }
 
-  struct dewlock_image *iter_image, *temp;
+  dewlock_image_t *iter_image, *temp;
   wl_list_for_each_safe(iter_image, temp, &state->images, link) {
     if (lenient_strcmp(iter_image->output_name, image->output_name) == 0) {
       if (image->output_name) {
@@ -168,7 +168,7 @@ char *cfg_path(void) {
   return NULL;
 }
 
-void cfg_read(const char *path, struct dewlock_state *state) {
+void cfg_read(const char *path, dewlock_state_t *state) {
   assert(state && "state must be non-null");
 #define readstr(Prop, Value)                                                 \
   if (streql(key, Value)) {                                                  \

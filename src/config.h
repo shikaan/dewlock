@@ -13,7 +13,7 @@ typedef struct {
   } colors;
   struct {
     char *path;
-    enum background_mode mode;
+    background_mode_t mode;
   } background;
   struct {
     const char *family;
@@ -22,5 +22,5 @@ typedef struct {
 } cfg_t;
 
 char *cfg_path(void);
-void cfg_read(const char *path, struct dewlock_state *state);
+void cfg_read(const char *path, dewlock_state_t *state);
 void cfg_get(cfg_t **cfg);

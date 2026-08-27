@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <string.h>
 
-enum background_mode parse_background_mode(const char *mode) {
+background_mode_t parse_background_mode(const char *mode) {
   assert(mode && "mode must be non-null");
   if (strcmp(mode, "stretch") == 0) {
     return BACKGROUND_MODE_STRETCH;
@@ -39,7 +39,7 @@ cairo_surface_t *load_background_image(const char *path) {
 }
 
 void render_background_image(cairo_t *cairo, cairo_surface_t *image,
-                             enum background_mode mode, int buffer_width,
+                             background_mode_t mode, int buffer_width,
                              int buffer_height) {
   assert(cairo && "cairo must be non-null");
   assert(image && "image must be non-null");

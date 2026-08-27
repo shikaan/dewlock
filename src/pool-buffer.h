@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <wayland-client.h>
 
-struct pool_buffer {
+typedef struct {
   struct wl_buffer *buffer;
   cairo_surface_t *surface;
   cairo_t *cairo;
@@ -12,12 +12,10 @@ struct pool_buffer {
   void *data;
   size_t size;
   bool busy;
-};
+} pool_buffer_t;
 
-struct pool_buffer *create_buffer(struct wl_shm *shm, struct pool_buffer *buf,
-                                  int32_t width, int32_t height,
-                                  uint32_t format);
-struct pool_buffer *get_next_buffer(struct wl_shm *shm,
-                                    struct pool_buffer pool[static 2],
-                                    uint32_t width, uint32_t height);
-void destroy_buffer(struct pool_buffer *buffer);
+pool_buffer_t *create_buffer(struct wl_shm *shm, pool_buffer_t *buf,
+                             int32_t width, int32_t height, uint32_t format);
+pool_buffer_t *get_next_buffer(struct wl_shm *shm, pool_buffer_t pool[static 2],
+                               uint32_t width, uint32_t height);
+void destroy_buffer(pool_buffer_t *buffer);

@@ -121,7 +121,7 @@ bool spawn_comm_child(void) {
   return true;
 }
 
-bool write_comm_request(struct dewlock_string *pw) {
+bool write_comm_request(dewlock_string_t *pw) {
   assert(pw && "pw must be non-null");
   assert(pw->buf && "pw->buf must be non-null");
   bool result = false;
