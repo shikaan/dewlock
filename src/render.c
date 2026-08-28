@@ -1,13 +1,22 @@
-#include "background-image.h"
-#include "cairo.h"
+#include "render.h"
+#include "background.h"
 #include "config.h"
 #include "dewlock.h"
 #include "result.h"
 #include <assert.h>
+#include <cairo/cairo.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <wayland-client.h>
+
+static void set_source_u32(cairo_t *cairo, uint32_t color) {
+  assert(cairo && "cairo must be non-null");
+  cairo_set_source_rgba(cairo, (color >> (3 * 8) & 0xFF) / 255.0,
+                        (color >> (2 * 8) & 0xFF) / 255.0,
+                        (color >> (1 * 8) & 0xFF) / 255.0,
+                        (color >> (0 * 8) & 0xFF) / 255.0);
+}
 
 static void surface_frame_handle_done(void *data, struct wl_callback *callback,
                                       uint32_t time) {
@@ -17,7 +26,7 @@ static void surface_frame_handle_done(void *data, struct wl_callback *callback,
   wl_callback_destroy(callback);
   surface->frame = NULL;
 
-  render(surface);
+  rnd_handle_render(surface);
 }
 
 static const struct wl_callback_listener surface_frame_listener = {
@@ -26,7 +35,7 @@ static const struct wl_callback_listener surface_frame_listener = {
 
 static bool render_frame(dewlock_surface_t *surface);
 
-void render(dewlock_surface_t *surface) {
+void rnd_handle_render(dewlock_surface_t *surface) {
   assert(surface && "surface must be non-null");
   dewlock_state_t *state = surface->state;
   cfg_t *cfg;
@@ -58,12 +67,12 @@ void render(dewlock_surface_t *surface) {
 
     cairo_save(cairo);
     cairo_set_operator(cairo, CAIRO_OPERATOR_SOURCE);
-    cairo_set_source_u32(cairo, cfg->colors.background);
+    set_source_u32(cairo, cfg->colors.background);
     cairo_paint(cairo);
     if (surface->image && cfg->background.mode != BACKGROUND_MODE_SOLID_COLOR) {
       cairo_set_operator(cairo, CAIRO_OPERATOR_OVER);
-      render_background_image(cairo, surface->image, cfg->background.mode,
-                              buffer_width, buffer_height);
+      bg_render_image(cairo, surface->image, cfg->background.mode,
+                      buffer_width, buffer_height);
     }
     cairo_restore(cairo);
     cairo_identity_matrix(cairo);
@@ -114,7 +123,7 @@ static void init_text(cairo_t *cairo, double width, double y,
   cairo_select_font_face(cairo, opts.family, CAIRO_FONT_SLANT_NORMAL,
                          opts.weight);
   cairo_set_font_size(cairo, opts.size);
-  cairo_set_source_u32(cairo, opts.color);
+  set_source_u32(cairo, opts.color);
   cairo_text_extents(cairo, text, extents);
 }
 
@@ -232,13 +241,13 @@ static void draw_form(cairo_t *c, dewlock_state_t *state, double h,
                        ? cfg->colors.error
                        : cfg->colors.text;
 
-  cairo_set_source_u32(c, color);
+  set_source_u32(c, color);
   cairo_set_line_width(c, border);
   cairo_move_to(c, inputx, inputy + inputh);
   cairo_line_to(c, inputx + inputw, inputy + inputh);
   cairo_stroke(c);
 
-  cairo_set_source_u32(c, cfg->colors.overlay);
+  set_source_u32(c, cfg->colors.overlay);
   cairo_rectangle(c, inputx, inputy, inputw, inputh);
   cairo_fill(c);
 
@@ -291,7 +300,7 @@ static bool render_frame(dewlock_surface_t *surface) {
 
   // Clear
   cairo_save(cairo);
-  cairo_set_source_u32(cairo, cfg->colors.overlay);
+  set_source_u32(cairo, cfg->colors.overlay);
   cairo_set_operator(cairo, CAIRO_OPERATOR_SOURCE);
   cairo_paint(cairo);
   cairo_restore(cairo);

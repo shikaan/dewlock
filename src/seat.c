@@ -2,6 +2,7 @@
 #include "dewlock.h"
 #include "log.h"
 #include "loop.h"
+#include "password.h"
 #include <stdlib.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -89,7 +90,7 @@ static void keyboard_repeat(void *data) {
   dewlock_state_t *state = seat->state;
   seat->repeat_timer = loop_add_timer(state->eventloop, seat->repeat_period_ms,
                                       keyboard_repeat, seat);
-  dewlock_handle_key(state, seat->repeat_sym, seat->repeat_codepoint);
+  pwd_handle_key(state, seat->repeat_sym, seat->repeat_codepoint);
 }
 
 static void keyboard_key(void *data, struct wl_keyboard *wl_keyboard,
@@ -109,7 +110,7 @@ static void keyboard_key(void *data, struct wl_keyboard *wl_keyboard,
   uint32_t keycode = key_state == WL_KEYBOARD_KEY_STATE_PRESSED ? key + 8 : 0;
   uint32_t codepoint = xkb_state_key_get_utf32(state->xkb.state, keycode);
   if (key_state == WL_KEYBOARD_KEY_STATE_PRESSED) {
-    dewlock_handle_key(state, sym, codepoint);
+    pwd_handle_key(state, sym, codepoint);
   }
 
   stop_repeat(seat);

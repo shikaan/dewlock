@@ -1,5 +1,5 @@
 #pragma once
 #include "dewlock.h"
-void state_set_time(dewlock_state_t *state);
-void schedule_clock_timer(dewlock_state_t *state);
-void cancel_clock_timer(dewlock_state_t *state);
+void clk_set_time(dewlock_state_t *state);
+void clk_schedule_timer(dewlock_state_t *state);
+void clk_cancel_timer(dewlock_state_t *state);

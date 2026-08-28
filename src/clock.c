@@ -5,9 +5,7 @@
 #include <stdio.h>
 #include <time.h>
 
-void schedule_clock_timer(dewlock_state_t *state);
-
-void state_set_time(dewlock_state_t *state) {
+void clk_set_time(dewlock_state_t *state) {
   assert(state && "state must be non-null");
   static char clock[8] = {0};
   static char date[256] = {0};
@@ -26,12 +24,12 @@ void state_set_time(dewlock_state_t *state) {
 
 static void set_time(void *data) {
   dewlock_state_t *state = data;
-  state_set_time(state);
+  clk_set_time(state);
   damage_state(state);
-  schedule_clock_timer(state);
+  clk_schedule_timer(state);
 }
 
-void schedule_clock_timer(dewlock_state_t *state) {
+void clk_schedule_timer(dewlock_state_t *state) {
   assert(state && "state must be non-null");
   if (state->clock_timer) {
     loop_remove_timer(state->eventloop, state->clock_timer);
@@ -40,7 +38,7 @@ void schedule_clock_timer(dewlock_state_t *state) {
   state->clock_timer = loop_add_timer(state->eventloop, 1000, set_time, state);
 }
 
-void cancel_clock_timer(dewlock_state_t *state) {
+void clk_cancel_timer(dewlock_state_t *state) {
   assert(state && "state must be non-null");
   if (state->clock_timer) {
     loop_remove_timer(state->eventloop, state->clock_timer);

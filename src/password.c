@@ -1,4 +1,5 @@
-#include "comm.h"
+#include "password.h"
+#include "auth.h"
 #include "dewlock.h"
 #include "loop.h"
 #include "result.h"
@@ -13,7 +14,7 @@
 
 // FIXME: rearrange code around password and its buffer.
 //        This function could be in password-buffer
-void clear_password_buffer(dewlock_string_t *pw) {
+void pwd_clear_buffer(dewlock_string_t *pw) {
   memset(pw->buf, 0, pw->cap);
   pw->len = 0;
 }
@@ -52,7 +53,7 @@ static void cancel_input_idle(dewlock_state_t *state) {
   }
 }
 
-void schedule_auth_idle(dewlock_state_t *state) {
+void pwd_schedule_auth_idle(dewlock_state_t *state) {
   if (state->auth_idle_timer) {
     loop_remove_timer(state->eventloop, state->auth_idle_timer);
   }
@@ -64,7 +65,7 @@ static void clear_password(void *data) {
   dewlock_state_t *state = data;
   state->clear_password_timer = NULL;
   state->input_state = INPUT_STATE_PRISTINE;
-  clear_password_buffer(&state->password);
+  pwd_clear_buffer(&state->password);
   damage_state(state);
 }
 
@@ -93,16 +94,16 @@ static void submit_password(dewlock_state_t *state) {
   cancel_password_clear(state);
   cancel_input_idle(state);
 
-  if (write_comm_request(&state->password) != OK) {
+  if (auth_write_request(&state->password) != OK) {
     state->auth_state = AUTH_STATE_INVALID;
-    schedule_auth_idle(state);
+    pwd_schedule_auth_idle(state);
   }
 
   damage_state(state);
 }
 
-void dewlock_handle_key(dewlock_state_t *state, xkb_keysym_t keysym,
-                        uint32_t codepoint) {
+void pwd_handle_key(dewlock_state_t *state, xkb_keysym_t keysym,
+                    uint32_t codepoint) {
 
   // Do not accept inputs while validating
   if (state->auth_state == AUTH_STATE_VALIDATING)
@@ -116,7 +117,7 @@ void dewlock_handle_key(dewlock_state_t *state, xkb_keysym_t keysym,
   case XKB_KEY_Delete:
   case XKB_KEY_BackSpace:
     if (state->xkb.control) {
-      clear_password_buffer(&state->password);
+      pwd_clear_buffer(&state->password);
       cancel_password_clear(state);
     } else {
       if (backspace(&state->password) && state->password.len != 0) {
@@ -128,7 +129,7 @@ void dewlock_handle_key(dewlock_state_t *state, xkb_keysym_t keysym,
     damage_state(state);
     break;
   case XKB_KEY_Escape:
-    clear_password_buffer(&state->password);
+    pwd_clear_buffer(&state->password);
     state->input_state = INPUT_STATE_PRISTINE;
     cancel_password_clear(state);
     damage_state(state);
@@ -159,7 +160,7 @@ void dewlock_handle_key(dewlock_state_t *state, xkb_keysym_t keysym,
   case XKB_KEY_u:
     if (state->xkb.control) {
       state->input_state = INPUT_STATE_DIRTY;
-      clear_password_buffer(&state->password);
+      pwd_clear_buffer(&state->password);
       cancel_password_clear(state);
       damage_state(state);
       break;

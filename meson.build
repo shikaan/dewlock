@@ -94,11 +94,10 @@ dependencies = [
 
 sources = [
 	'main.c',
-	'src/background-image.c',
-	'src/cairo.c',
+	'src/auth.c',
+	'src/background.c',
 	'src/cli.c',
 	'src/clock.c',
-	'src/comm.c',
 	'src/config.c',
 	'src/ctx.c',
 	'src/log.c',
@@ -111,13 +110,13 @@ sources = [
 ]
 
 if libpam.found()
-	sources += ['src/pam.c']
+	sources += ['src/auth-pam.c']
 	dependencies += [libpam]
 else
 	warning('The dewlock binary often needs to be setuid when compiled without libpam')
 	warning('You must do this manually post-install: chmod a+s /path/to/dewlock')
 	warning('See the "Without PAM" section of the README for details.')
-	sources += ['src/shadow.c']
+	sources += ['src/auth-shadow.c']
 	dependencies += [crypt]
 endif
 

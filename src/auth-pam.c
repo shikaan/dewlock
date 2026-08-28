@@ -1,6 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
-#include "comm.h"
-#include "dewlock.h"
+#include "auth.h"
 #include "log.h"
 #include "password-buffer.h"
 #include "result.h"
@@ -8,11 +7,12 @@
 #include <pwd.h>
 #include <security/pam_appl.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-void initialize_pw_backend(int argc, char **argv) {
+void auth_init(int argc, char **argv) {
   (void)argc;
   if (getuid() != geteuid() || getgid() != getegid()) {
     log_error("dewlock is setuid, but was compiled with the PAM"
@@ -20,7 +20,7 @@ void initialize_pw_backend(int argc, char **argv) {
               argv[0]);
     exit(EXIT_FAILURE);
   }
-  if (spawn_comm_child() != OK) {
+  if (auth_spawn_child() != OK) {
     exit(EXIT_FAILURE);
   }
 }
@@ -86,7 +86,7 @@ static const char *get_pam_auth_error(int pam_status) {
   }
 }
 
-void run_pw_backend_child(void) {
+void auth_run(void) {
   char *pw_buf = NULL;
   struct passwd *passwd = getpwuid(getuid());
   if (!passwd) {
@@ -113,8 +113,8 @@ void run_pw_backend_child(void) {
   int pam_status = PAM_SUCCESS;
   while (1) {
     size_t size;
-    result_t res = read_comm_request(&pw_buf, &size);
-    if (res == ERR_COMM_EOF) {
+    result_t res = auth_read_request(&pw_buf, &size);
+    if (res == ERR_AUTH_EOF) {
       break;
     } else if (res != OK) {
       exit(EXIT_FAILURE);
@@ -131,7 +131,7 @@ void run_pw_backend_child(void) {
       log_error("pam_authenticate failed: %s", get_pam_auth_error(pam_status));
     }
 
-    if (write_comm_reply(success) != OK) {
+    if (auth_write_reply(success) != OK) {
       exit(EXIT_FAILURE);
     }
 
