@@ -1,10 +1,10 @@
-#include "background-image.h"
-#include "cairo.h"
+#include "background.h"
 #include "log.h"
 #include <assert.h>
+#include <cairo/cairo.h>
 #include <string.h>
 
-background_mode_t parse_background_mode(const char *mode) {
+background_mode_t bg_parse_mode(const char *mode) {
   assert(mode && "mode must be non-null");
   if (strcmp(mode, "stretch") == 0) {
     return BACKGROUND_MODE_STRETCH;
@@ -23,7 +23,7 @@ background_mode_t parse_background_mode(const char *mode) {
   return BACKGROUND_MODE_INVALID;
 }
 
-cairo_surface_t *load_background_image(const char *path) {
+cairo_surface_t *bg_load_image(const char *path) {
   assert(path && "path must be non-null");
   cairo_surface_t *image = cairo_image_surface_create_from_png(path);
   if (!image) {
@@ -38,9 +38,9 @@ cairo_surface_t *load_background_image(const char *path) {
   return image;
 }
 
-void render_background_image(cairo_t *cairo, cairo_surface_t *image,
-                             background_mode_t mode, int buffer_width,
-                             int buffer_height) {
+void bg_render_image(cairo_t *cairo, cairo_surface_t *image,
+                      background_mode_t mode, int buffer_width,
+                      int buffer_height) {
   assert(cairo && "cairo must be non-null");
   assert(image && "image must be non-null");
   assert(buffer_width > 0 && "buffer_width must be positive");

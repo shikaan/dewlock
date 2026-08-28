@@ -1,7 +1,7 @@
 #pragma once
-#include "cairo.h"
 #include "ctx.h"
 #include "seat.h"
+#include <cairo/cairo.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <wayland-client.h>
@@ -82,17 +82,4 @@ typedef struct {
   struct wl_list link;
 } dewlock_image_t;
 
-void dewlock_handle_key(dewlock_state_t *state, xkb_keysym_t keysym,
-                        uint32_t codepoint);
-
-void render(dewlock_surface_t *surface);
 void damage_state(dewlock_state_t *state);
-void clear_password_buffer(dewlock_string_t *pw);
-void schedule_auth_idle(dewlock_state_t *state);
-
-void initialize_pw_backend(int argc, char **argv);
-void run_pw_backend_child(void);
-// FIXME: declared but never defined anywhere; src/shadow.c calls this and
-// fails to link (PAM=0 build only). Was removed at some point in history
-// (see `git log -S"clear_buffer"`) without updating callers.
-void clear_buffer(char *buf, size_t size);

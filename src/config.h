@@ -1,5 +1,5 @@
 #pragma once
-#include "background-image.h"
+#include "background.h"
 #include "dewlock.h"
 #include <stdint.h>
 

@@ -1,8 +1,7 @@
-#include "background-image.h"
-#include "cairo.h"
+#include "auth.h"
+#include "background.h"
 #include "cli.h"
 #include "clock.h"
-#include "comm.h"
 #include "config.h"
 #include "ctx.h"
 #include "dewlock.h"
@@ -10,9 +9,12 @@
 #include "log.h"
 #include "loop.h"
 #include "password-buffer.h"
+#include "password.h"
+#include "render.h"
 #include "result.h"
 #include "seat.h"
 #include "strcmp.h"
+#include <cairo/cairo.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
@@ -157,7 +159,7 @@ static void ext_session_lock_surface_v1_handle_configure(
   surface->height = height;
   ext_session_lock_surface_v1_ack_configure(lock_surface, serial);
   surface->dirty = true;
-  render(surface);
+  rnd_handle_render(surface);
 }
 
 static const struct ext_session_lock_surface_v1_listener
@@ -169,7 +171,7 @@ void damage_state(dewlock_state_t *s) {
   dewlock_surface_t *surface;
   wl_list_for_each(surface, &s->surfaces, link) {
     surface->dirty = true;
-    render(surface);
+    rnd_handle_render(surface);
   }
 }
 
@@ -190,7 +192,7 @@ static void handle_wl_output_geometry(void *data, struct wl_output *wl_output,
   surface->subpixel = (enum wl_output_subpixel)subpixel;
   if (surface->state->run_display) {
     surface->dirty = true;
-    render(surface);
+    rnd_handle_render(surface);
   }
 }
 
@@ -220,7 +222,7 @@ static void handle_wl_output_scale(void *data, struct wl_output *output,
   surface->scale = factor;
   if (surface->state->run_display) {
     surface->dirty = true;
-    render(surface);
+    rnd_handle_render(surface);
   }
 }
 
@@ -353,12 +355,12 @@ static void display_in(int fd, short mask, void *data) {
   }
 }
 
-static void comm_in(int fd, short mask, void *data) {
+static void reply_in(int fd, short mask, void *data) {
   (void)fd;
   (void)data;
   if (mask & POLLIN) {
     bool auth_success = false;
-    if (read_comm_reply(&auth_success) != OK) {
+    if (auth_read_reply(&auth_success) != OK) {
       exit(EXIT_FAILURE);
     }
     if (auth_success) {
@@ -366,7 +368,7 @@ static void comm_in(int fd, short mask, void *data) {
       state.run_display = false;
     } else {
       state.auth_state = AUTH_STATE_INVALID;
-      schedule_auth_idle(&state);
+      pwd_schedule_auth_idle(&state);
       ++state.failed_attempts;
       damage_state(&state);
     }
@@ -392,7 +394,7 @@ int main(int argc, char **argv) {
   cli_get(&opts);
   log_init(opts->debug ? LOG_LEVEL_DEBUG : LOG_LEVEL_ERROR);
 
-  initialize_pw_backend(argc, argv);
+  auth_init(argc, argv);
   srand((unsigned int)time(NULL));
 
   state.failed_attempts = 0;
@@ -419,7 +421,7 @@ int main(int argc, char **argv) {
   }
   state.password.buf[0] = 0;
 
-  state_set_time(&state);
+  clk_set_time(&state);
 
   if (pipe(sigusr_fds) != 0) {
     log_error("Failed to pipe", NULL);
@@ -489,11 +491,11 @@ int main(int argc, char **argv) {
   loop_add_fd(state.eventloop, wl_display_get_fd(state.display), POLLIN,
               display_in, NULL);
 
-  loop_add_fd(state.eventloop, get_comm_reply_fd(), POLLIN, comm_in, NULL);
+  loop_add_fd(state.eventloop, auth_get_reply_fd(), POLLIN, reply_in, NULL);
 
   loop_add_fd(state.eventloop, sigusr_fds[0], POLLIN, term_in, NULL);
 
-  schedule_clock_timer(&state);
+  clk_schedule_timer(&state);
 
   struct sigaction sa;
   sa.sa_handler = do_sigusr;
@@ -510,7 +512,7 @@ int main(int argc, char **argv) {
     loop_poll(state.eventloop);
   }
 
-  cancel_clock_timer(&state);
+  clk_cancel_timer(&state);
   ext_session_lock_v1_unlock_and_destroy(state.ext_session_lock_v1);
   wl_display_roundtrip(state.display);
 

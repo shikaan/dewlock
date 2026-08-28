@@ -13,15 +13,14 @@
 // GNU, you damn slimy bastard
 #include <crypt.h>
 #endif
-#include "comm.h"
-#include "dewlock.h"
+#include "auth.h"
 #include "log.h"
 #include "password-buffer.h"
 #include "result.h"
 
 char *encpw = NULL;
 
-void initialize_pw_backend(int argc, char **argv) {
+void auth_init(int argc, char **argv) {
   (void)argc;
   (void)argv;
   /* This code runs as root */
@@ -58,7 +57,7 @@ void initialize_pw_backend(int argc, char **argv) {
   /* This code does not run as root */
   log_debug("Prepared to authorize user %s", pwent->pw_name);
 
-  if (spawn_comm_child() != OK) {
+  if (auth_spawn_child() != OK) {
     exit(EXIT_FAILURE);
   }
 
@@ -67,13 +66,13 @@ void initialize_pw_backend(int argc, char **argv) {
   encpw = NULL;
 }
 
-void run_pw_backend_child(void) {
+void auth_run(void) {
   assert(encpw != NULL && "encpw must be set before forking the pw backend child");
   while (1) {
     char *buf;
     size_t size;
-    result_t res = read_comm_request(&buf, &size);
-    if (res == ERR_COMM_EOF) {
+    result_t res = auth_read_request(&buf, &size);
+    if (res == ERR_AUTH_EOF) {
       break;
     } else if (res != OK) {
       exit(EXIT_FAILURE);
@@ -89,7 +88,7 @@ void run_pw_backend_child(void) {
     }
     bool success = strcmp(c, encpw) == 0;
 
-    if (write_comm_reply(success) != OK) {
+    if (auth_write_reply(success) != OK) {
       exit(EXIT_FAILURE);
     }
 

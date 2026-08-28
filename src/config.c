@@ -1,5 +1,5 @@
 #include "config.h"
-#include "background-image.h"
+#include "background.h"
 #include "color.h"
 #include "log.h"
 #include "strcmp.h"
@@ -130,7 +130,7 @@ static void load_image(dewlock_state_t *state) {
   }
 
   // Load the actual image
-  image->cairo_surface = load_background_image(image->path);
+  image->cairo_surface = bg_load_image(image->path);
   if (!image->cairo_surface) {
     free(image);
     return;
@@ -231,7 +231,7 @@ void cfg_read(const char *path, dewlock_state_t *state) {
           readstr(cfg.background.path, CONFIG_BACKGROUND_PATH);
 
           if (streql(key, CONFIG_BACKGROUND_MODE)) {
-            cfg.background.mode = parse_background_mode(value);
+            cfg.background.mode = bg_parse_mode(value);
             continue;
           }
         }

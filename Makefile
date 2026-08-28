@@ -43,16 +43,16 @@ DEPS := wayland-client xkbcommon cairo
 DEPS_CFLAGS := $(shell pkg-config --cflags $(DEPS))
 DEPS_LIBS := $(shell pkg-config --libs $(DEPS))
 
-# PAM=1 authenticates via libpam (src/pam.c); PAM=0 authenticates via
-# /etc/shadow (src/shadow.c) and requires the binary to run setuid root.
+# PAM=1 authenticates via libpam (src/auth-pam.c); PAM=0 authenticates via
+# /etc/shadow (src/auth-shadow.c) and requires the binary to run setuid root.
 PAM ?= 1
 
 ifeq ($(PAM),1)
-    PW_BACKEND := src/pam.o
-    PW_BACKEND_LIBS := -lpam
+    AUTH_BACKEND := src/auth-pam.o
+    AUTH_BACKEND_LIBS := -lpam
 else
-    PW_BACKEND := src/shadow.o
-    PW_BACKEND_LIBS := -lcrypt
+    AUTH_BACKEND := src/auth-shadow.o
+    AUTH_BACKEND_LIBS := -lcrypt
 endif
 
 # ------------------
@@ -119,24 +119,24 @@ protocols/ext-session-lock-v1-protocol.o: protocols/ext-session-lock-v1-client-p
 	protocols/ext-session-lock-v1-protocol.c
 
 main.o: protocols/ext-session-lock-v1-client-protocol.h
-src/background-image.o: src/cairo.o src/log.o
+src/auth.o: src/log.o src/password-buffer.o
+src/background.o: src/log.o
 src/clock.o: src/loop.o
-src/comm.o: src/log.o src/password-buffer.o
 src/cli.o:
-src/config.o: src/background-image.o src/color.h src/log.o src/strcmp.h
+src/config.o: src/background.o src/color.h src/log.o src/strcmp.h
 src/loop.o: src/log.o
 src/password-buffer.o: src/log.o
-src/password.o: src/comm.o src/loop.o src/seat.o src/unicode.o
-src/render.o: src/background-image.o src/cairo.o src/log.o
+src/password.o: src/auth.o src/loop.o src/seat.o src/unicode.o
+src/render.o: src/background.o src/log.o
 src/seat.o: src/log.o src/loop.o
-src/pam.o: src/comm.o src/log.o src/password-buffer.o
-src/shadow.o: src/comm.o src/log.o src/password-buffer.o
+src/auth-pam.o: src/auth.o src/log.o src/password-buffer.o
+src/auth-shadow.o: src/auth.o src/log.o src/password-buffer.o
 
 main: CFLAGS += -Isrc $(DEPS_CFLAGS) \
 	-isystem protocols -DVERSION='"$(VERSION)"' -DSHA='"$(SHA)"'
-main: LDLIBS += $(DEPS_LIBS) $(PW_BACKEND_LIBS) -lm -lrt
-main: main.o protocols/ext-session-lock-v1-protocol.o src/background-image.o \
-	src/cairo.o src/cli.o src/clock.o src/comm.o src/config.o src/ctx.o \
+main: LDLIBS += $(DEPS_LIBS) $(AUTH_BACKEND_LIBS) -lm -lrt
+main: main.o protocols/ext-session-lock-v1-protocol.o src/auth.o \
+	src/background.o src/cli.o src/clock.o src/config.o src/ctx.o \
 	src/log.o src/loop.o src/password-buffer.o src/password.o \
-	src/render.o src/seat.o src/unicode.o $(PW_BACKEND)
+	src/render.o src/seat.o src/unicode.o $(AUTH_BACKEND)
 	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
