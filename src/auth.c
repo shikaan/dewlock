@@ -1,9 +1,8 @@
 #include "auth.h"
 #include "dewlock.h"
 #include "log.h"
-#include "password-buffer.h"
-#include "password.h"
 #include "result.h"
+#include "safebuf.h"
 #include <assert.h>
 #include <errno.h>
 #include <signal.h>
@@ -78,7 +77,7 @@ result_t auth_read_request(char **buf_ptr, size_t *size) {
   log_debug("received pw check request", NULL);
 
   char *buf;
-  result_t res = password_buffer_create(*size, &buf);
+  result_t res = sbuf_create(*size, &buf);
   if (res != OK) {
     return res;
   }
@@ -150,7 +149,7 @@ result_t auth_write_request(dewlock_string_t *pw) {
   result = OK;
 
 out:
-  pwd_clear_buffer(pw);
+  sbuf_clear_string(pw);
   return result;
 }
 

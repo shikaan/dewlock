@@ -15,8 +15,8 @@
 #endif
 #include "auth.h"
 #include "log.h"
-#include "password-buffer.h"
 #include "result.h"
+#include "safebuf.h"
 
 char *encpw = NULL;
 
@@ -62,7 +62,7 @@ void auth_init(int argc, char **argv) {
   }
 
   /* Buffer is only used by the child */
-  clear_buffer(encpw, strlen(encpw));
+  sbuf_clear(encpw, strlen(encpw));
   encpw = NULL;
 }
 
@@ -79,7 +79,7 @@ void auth_run(void) {
     }
 
     const char *c = crypt(buf, encpw);
-    password_buffer_destroy(buf, size);
+    sbuf_destroy(buf, size);
     buf = NULL;
 
     if (c == NULL) {
@@ -95,6 +95,6 @@ void auth_run(void) {
     sleep(2);
   }
 
-  clear_buffer(encpw, strlen(encpw));
+  sbuf_clear(encpw, strlen(encpw));
   exit(EXIT_SUCCESS);
 }
