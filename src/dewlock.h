@@ -1,5 +1,6 @@
 #pragma once
 #include "ctx.h"
+#include "safebuf.h"
 #include "seat.h"
 #include <cairo/cairo.h>
 #include <stdbool.h>
@@ -19,13 +20,6 @@ typedef enum {
   INPUT_STATE_DIRTY,    // input was touched
 } input_state_t;
 
-typedef struct dewlock_string dewlock_string_t;
-struct dewlock_string {
-  size_t len;
-  size_t cap;
-  char *buf;
-};
-
 typedef struct dewlock_state dewlock_state_t;
 struct dewlock_state {
   loop_t *eventloop;
@@ -39,7 +33,7 @@ struct dewlock_state {
   struct wl_shm *shm;
   struct wl_list surfaces;
   struct wl_list images;
-  dewlock_string_t password;
+  sbuf_t password;
   char *username;
   char *time;
   char *date;

@@ -1,10 +1,10 @@
 #include "safebuf.h"
-#include "dewlock.h"
 #include "log.h"
 #include "result.h"
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,10 +49,11 @@ static result_t lock_buffer(char *addr, size_t size) {
   return OK;
 }
 
-result_t sbuf_create(size_t size, char **buffer) {
-  assert(size > 0 && "size must be positive");
+result_t sbuf_create(sbuf_t *sbuf, size_t cap) {
+  assert(sbuf && "sbuf must be non-null");
+  assert(cap > 0 && "cap must be positive");
   void *buf;
-  int err = posix_memalign(&buf, (size_t)get_page_size(), size);
+  int err = posix_memalign(&buf, (size_t)get_page_size(), cap);
   if (err) {
     // posix_memalign doesn't set errno according to the man page
     errno = err;
@@ -60,33 +61,36 @@ result_t sbuf_create(size_t size, char **buffer) {
     return ERR_SBUF_ALLOC;
   }
 
-  result_t res = lock_buffer(buf, size);
+  result_t res = lock_buffer(buf, cap);
   if (res != OK) {
     free(buf);
     return res;
   }
 
-  *buffer = buf;
+  memset(buf, 0, cap);
+  sbuf->buf = buf;
+  sbuf->cap = cap;
+  sbuf->len = 0;
   return OK;
 }
 
-void sbuf_destroy(char *buffer, size_t size) {
-  assert(buffer && "buffer must be non-null");
-  assert((uintptr_t)buffer % (uintptr_t)get_page_size() == 0 &&
-         "buffer must be page-aligned");
-  memset(buffer, 0, size);
-  if (mlock_supported && munlock(buffer, size) != 0) {
+void sbuf_destroy(sbuf_t *sbuf) {
+  assert(sbuf && "sbuf must be non-null");
+  assert(sbuf->buf && "sbuf->buf must be non-null");
+  assert((uintptr_t)sbuf->buf % (uintptr_t)get_page_size() == 0 &&
+         "sbuf->buf must be page-aligned");
+  memset(sbuf->buf, 0, sbuf->cap);
+  if (mlock_supported && munlock(sbuf->buf, sbuf->cap) != 0) {
     log_warn("Unable to munlock() password memory: %s", strerror(errno));
   }
-  free(buffer);
+  free(sbuf->buf);
+  sbuf->buf = NULL;
+  sbuf->cap = 0;
+  sbuf->len = 0;
 }
 
-void sbuf_clear_string(dewlock_string_t *pw) {
-  memset(pw->buf, 0, pw->cap);
-  pw->len = 0;
-}
-
-void sbuf_clear(char *buf, size_t size) {
-  assert(buf && "buf must be non-null");
-  memset(buf, 0, size);
+void sbuf_clear(sbuf_t *sbuf) {
+  assert(sbuf && "sbuf must be non-null");
+  memset(sbuf->buf, 0, sbuf->cap);
+  sbuf->len = 0;
 }
