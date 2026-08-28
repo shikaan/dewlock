@@ -18,7 +18,7 @@
 #include "result.h"
 #include "safebuf.h"
 
-char *encpw = NULL;
+static sbuf_t encpw = {0};
 
 void auth_init(int argc, char **argv) {
   (void)argc;
@@ -29,15 +29,16 @@ void auth_init(int argc, char **argv) {
     log_error("failed to getpwuid: %s", strerror(errno));
     exit(EXIT_FAILURE);
   }
-  encpw = pwent->pw_passwd;
-  if (strcmp(encpw, "x") == 0) {
+  encpw.buf = pwent->pw_passwd;
+  if (strcmp(encpw.buf, "x") == 0) {
     struct spwd *swent = getspnam(pwent->pw_name);
     if (!swent) {
       log_error("failed to getspnam: %s", strerror(errno));
       exit(EXIT_FAILURE);
     }
-    encpw = swent->sp_pwdp;
+    encpw.buf = swent->sp_pwdp;
   }
+  encpw.cap = encpw.len = strlen(encpw.buf);
 
   if (setgid(getgid()) != 0) {
     log_error("Unable to drop root: %s", strerror(errno));
@@ -62,31 +63,29 @@ void auth_init(int argc, char **argv) {
   }
 
   /* Buffer is only used by the child */
-  sbuf_clear(encpw, strlen(encpw));
-  encpw = NULL;
+  sbuf_clear(&encpw);
+  encpw.buf = NULL;
 }
 
 void auth_run(void) {
-  assert(encpw != NULL && "encpw must be set before forking the pw backend child");
+  assert(encpw.buf != NULL && "encpw must be set before forking the pw backend child");
   while (1) {
-    char *buf;
-    size_t size;
-    result_t res = auth_read_request(&buf, &size);
+    sbuf_t pw = {0};
+    result_t res = auth_read_request(&pw);
     if (res == ERR_AUTH_EOF) {
       break;
     } else if (res != OK) {
       exit(EXIT_FAILURE);
     }
 
-    const char *c = crypt(buf, encpw);
-    sbuf_destroy(buf, size);
-    buf = NULL;
+    const char *c = crypt(pw.buf, encpw.buf);
+    sbuf_destroy(&pw);
 
     if (c == NULL) {
       log_error("crypt failed: %s", strerror(errno));
       exit(EXIT_FAILURE);
     }
-    bool success = strcmp(c, encpw) == 0;
+    bool success = strcmp(c, encpw.buf) == 0;
 
     if (auth_write_reply(success) != OK) {
       exit(EXIT_FAILURE);
@@ -95,6 +94,6 @@ void auth_run(void) {
     sleep(2);
   }
 
-  sbuf_clear(encpw, strlen(encpw));
+  sbuf_clear(&encpw);
   exit(EXIT_SUCCESS);
 }

@@ -3,11 +3,13 @@
 #include "result.h"
 #include <stddef.h>
 
-typedef struct dewlock_string dewlock_string_t;
+typedef struct {
+  char *buf;
+  size_t cap;
+  size_t len;
+} sbuf_t;
 
-result_t sbuf_create(size_t size, char **buffer);
-void sbuf_destroy(char *buffer, size_t size);
-void sbuf_clear_string(dewlock_string_t *pw);
-// Wipes buf in place without freeing it, for sensitive memory not owned by
-// sbuf_create (e.g. a hash string handed back by getspnam()).
-void sbuf_clear(char *buf, size_t size);
+result_t sbuf_create(sbuf_t *sbuf, size_t cap);
+void sbuf_destroy(sbuf_t *sbuf);
+// Wipes buf up to cap and resets len to 0; the allocation itself is kept.
+void sbuf_clear(sbuf_t *sbuf);

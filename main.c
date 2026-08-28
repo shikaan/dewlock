@@ -414,12 +414,9 @@ int main(int argc, char **argv) {
   cfg_read(config_path, &state);
   free(resolved_config_path);
 
-  state.password.len = 0;
-  state.password.cap = 1024;
-  if (sbuf_create(state.password.cap, &state.password.buf) != OK) {
+  if (sbuf_create(&state.password, 1024) != OK) {
     return EXIT_FAILURE;
   }
-  state.password.buf[0] = 0;
 
   clk_set_time(&state);
 

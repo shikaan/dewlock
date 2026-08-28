@@ -13,7 +13,7 @@
 #include <unistd.h>
 #include <xkbcommon/xkbcommon.h>
 
-static bool backspace(dewlock_string_t *pw) {
+static bool backspace(sbuf_t *pw) {
   if (pw->len != 0) {
     pw->len -= (size_t)utf8_last_size(pw->buf);
     pw->buf[pw->len] = 0;
@@ -22,7 +22,7 @@ static bool backspace(dewlock_string_t *pw) {
   return false;
 }
 
-static void append_ch(dewlock_string_t *pw, uint32_t codepoint) {
+static void append_ch(sbuf_t *pw, uint32_t codepoint) {
   size_t utf8_size = utf8_chsize(codepoint);
   if (pw->len + utf8_size + 1 >= pw->cap) {
     // TODO: Display error
@@ -59,7 +59,7 @@ static void clear_password(void *data) {
   dewlock_state_t *state = data;
   state->clear_password_timer = NULL;
   state->input_state = INPUT_STATE_PRISTINE;
-  sbuf_clear_string(&state->password);
+  sbuf_clear(&state->password);
   damage_state(state);
 }
 
@@ -111,7 +111,7 @@ void pwd_handle_key(dewlock_state_t *state, xkb_keysym_t keysym,
   case XKB_KEY_Delete:
   case XKB_KEY_BackSpace:
     if (state->xkb.control) {
-      sbuf_clear_string(&state->password);
+      sbuf_clear(&state->password);
       cancel_password_clear(state);
     } else {
       if (backspace(&state->password) && state->password.len != 0) {
@@ -123,7 +123,7 @@ void pwd_handle_key(dewlock_state_t *state, xkb_keysym_t keysym,
     damage_state(state);
     break;
   case XKB_KEY_Escape:
-    sbuf_clear_string(&state->password);
+    sbuf_clear(&state->password);
     state->input_state = INPUT_STATE_PRISTINE;
     cancel_password_clear(state);
     damage_state(state);
@@ -154,7 +154,7 @@ void pwd_handle_key(dewlock_state_t *state, xkb_keysym_t keysym,
   case XKB_KEY_u:
     if (state->xkb.control) {
       state->input_state = INPUT_STATE_DIRTY;
-      sbuf_clear_string(&state->password);
+      sbuf_clear(&state->password);
       cancel_password_clear(state);
       damage_state(state);
       break;

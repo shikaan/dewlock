@@ -1,5 +1,4 @@
 #include "auth.h"
-#include "dewlock.h"
 #include "log.h"
 #include "result.h"
 #include "safebuf.h"
@@ -57,41 +56,40 @@ static bool write_full(int fd, const void *src, size_t size) {
   return true;
 }
 
-result_t auth_read_request(char **buf_ptr, size_t *size) {
-  assert(buf_ptr && "buf_ptr must be non-null");
-  assert(size && "size must be non-null");
+result_t auth_read_request(sbuf_t *pw) {
+  assert(pw && "pw must be non-null");
   int fd = pipes[0][0];
 
-  ssize_t n = read_full(fd, size, sizeof(*size));
+  size_t size;
+  ssize_t n = read_full(fd, &size, sizeof(size));
   if (n == 0) {
     return ERR_AUTH_EOF;
   }
   if (n < 0) {
     return ERR_AUTH_READ;
   }
-  if (*size == 0) {
+  if (size == 0) {
     log_error("received invalid pw check request: zero size", NULL);
     return ERR_AUTH_INVALID;
   }
 
   log_debug("received pw check request", NULL);
 
-  char *buf;
-  result_t res = sbuf_create(*size, &buf);
+  result_t res = sbuf_create(pw, size);
   if (res != OK) {
     return res;
   }
 
-  if (read_full(fd, buf, *size) <= 0) {
+  if (read_full(fd, pw->buf, size) <= 0) {
     log_error("failed to read pw: %s", strerror(errno));
     return ERR_AUTH_READ;
   }
 
-  if (buf[*size - 1] != '\0') {
+  if (pw->buf[size - 1] != '\0') {
     log_error("received invalid pw check request: not NUL-terminated", NULL);
     return ERR_AUTH_INVALID;
   }
-  *buf_ptr = buf;
+  pw->len = size - 1;
   return OK;
 }
 
@@ -129,7 +127,7 @@ result_t auth_spawn_child(void) {
   return OK;
 }
 
-result_t auth_write_request(dewlock_string_t *pw) {
+result_t auth_write_request(sbuf_t *pw) {
   assert(pw && "pw must be non-null");
   assert(pw->buf && "pw->buf must be non-null");
   result_t result = ERR_AUTH_WRITE;
@@ -149,7 +147,7 @@ result_t auth_write_request(dewlock_string_t *pw) {
   result = OK;
 
 out:
-  sbuf_clear_string(pw);
+  sbuf_clear(pw);
   return result;
 }
 

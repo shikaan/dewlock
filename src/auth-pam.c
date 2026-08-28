@@ -87,7 +87,7 @@ static const char *get_pam_auth_error(int pam_status) {
 }
 
 void auth_run(void) {
-  char *pw_buf = NULL;
+  sbuf_t pw = {0};
   struct passwd *passwd = getpwuid(getuid());
   if (!passwd) {
     log_error("getpwuid failed: %s", strerror(errno));
@@ -112,18 +112,16 @@ void auth_run(void) {
 
   int pam_status = PAM_SUCCESS;
   while (1) {
-    size_t size;
-    result_t res = auth_read_request(&pw_buf, &size);
+    result_t res = auth_read_request(&pw);
     if (res == ERR_AUTH_EOF) {
       break;
     } else if (res != OK) {
       exit(EXIT_FAILURE);
     }
 
-    state.password = pw_buf;
+    state.password = pw.buf;
     pam_status = pam_authenticate(auth_handle, 0);
-    sbuf_destroy(pw_buf, size);
-    pw_buf = NULL;
+    sbuf_destroy(&pw);
     state.password = NULL;
 
     bool success = pam_status == PAM_SUCCESS;
