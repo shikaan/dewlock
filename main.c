@@ -8,10 +8,10 @@
 #include "ext-session-lock-v1-client-protocol.h"
 #include "log.h"
 #include "loop.h"
-#include "password-buffer.h"
 #include "password.h"
 #include "render.h"
 #include "result.h"
+#include "safebuf.h"
 #include "seat.h"
 #include "strcmp.h"
 #include <cairo/cairo.h>
@@ -416,7 +416,7 @@ int main(int argc, char **argv) {
 
   state.password.len = 0;
   state.password.cap = 1024;
-  if (password_buffer_create(state.password.cap, &state.password.buf) != OK) {
+  if (sbuf_create(state.password.cap, &state.password.buf) != OK) {
     return EXIT_FAILURE;
   }
   state.password.buf[0] = 0;

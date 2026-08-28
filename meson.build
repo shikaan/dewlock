@@ -102,9 +102,9 @@ sources = [
 	'src/ctx.c',
 	'src/log.c',
 	'src/loop.c',
-	'src/password-buffer.c',
 	'src/password.c',
 	'src/render.c',
+	'src/safebuf.c',
 	'src/seat.c',
 	'src/unicode.c',
 ]

@@ -1,8 +1,8 @@
 #define _POSIX_C_SOURCE 200809L
 #include "auth.h"
 #include "log.h"
-#include "password-buffer.h"
 #include "result.h"
+#include "safebuf.h"
 #include <errno.h>
 #include <pwd.h>
 #include <security/pam_appl.h>
@@ -122,7 +122,7 @@ void auth_run(void) {
 
     state.password = pw_buf;
     pam_status = pam_authenticate(auth_handle, 0);
-    password_buffer_destroy(pw_buf, size);
+    sbuf_destroy(pw_buf, size);
     pw_buf = NULL;
     state.password = NULL;
 

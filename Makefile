@@ -119,24 +119,24 @@ protocols/ext-session-lock-v1-protocol.o: protocols/ext-session-lock-v1-client-p
 	protocols/ext-session-lock-v1-protocol.c
 
 main.o: protocols/ext-session-lock-v1-client-protocol.h
-src/auth.o: src/log.o src/password-buffer.o
+src/auth.o: src/log.o src/safebuf.o
 src/background.o: src/log.o
 src/clock.o: src/loop.o
 src/cli.o:
 src/config.o: src/background.o src/color.h src/log.o src/strcmp.h
 src/loop.o: src/log.o
-src/password-buffer.o: src/log.o
-src/password.o: src/auth.o src/loop.o src/seat.o src/unicode.o
+src/safebuf.o: src/log.o
+src/password.o: src/auth.o src/loop.o src/safebuf.o src/seat.o src/unicode.o
 src/render.o: src/background.o src/log.o
 src/seat.o: src/log.o src/loop.o
-src/auth-pam.o: src/auth.o src/log.o src/password-buffer.o
-src/auth-shadow.o: src/auth.o src/log.o src/password-buffer.o
+src/auth-pam.o: src/auth.o src/log.o src/safebuf.o
+src/auth-shadow.o: src/auth.o src/log.o src/safebuf.o
 
 main: CFLAGS += -Isrc $(DEPS_CFLAGS) \
 	-isystem protocols -DVERSION='"$(VERSION)"' -DSHA='"$(SHA)"'
 main: LDLIBS += $(DEPS_LIBS) $(AUTH_BACKEND_LIBS) -lm -lrt
 main: main.o protocols/ext-session-lock-v1-protocol.o src/auth.o \
 	src/background.o src/cli.o src/clock.o src/config.o src/ctx.o \
-	src/log.o src/loop.o src/password-buffer.o src/password.o \
-	src/render.o src/seat.o src/unicode.o $(AUTH_BACKEND)
+	src/log.o src/loop.o src/password.o \
+	src/render.o src/safebuf.o src/seat.o src/unicode.o $(AUTH_BACKEND)
 	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
