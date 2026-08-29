@@ -18,7 +18,7 @@
 #include "result.h"
 #include "safebuf.h"
 
-static sbuf_t encpw = {0};
+static sbuf_t hashed_password = {0};
 
 void auth_init(int argc, char **argv) {
   (void)argc;
@@ -29,29 +29,22 @@ void auth_init(int argc, char **argv) {
     log_error("failed to getpwuid: %s", strerror(errno));
     exit(EXIT_FAILURE);
   }
-  encpw.buf = pwent->pw_passwd;
-  if (strcmp(encpw.buf, "x") == 0) {
-    struct spwd *swent = getspnam(pwent->pw_name);
-    if (!swent) {
-      log_error("failed to getspnam: %s", strerror(errno));
+  hashed_password.buf = pwent->pw_passwd;
+  if (strcmp(hashed_password.buf, "x") == 0) {
+    struct spwd *entry = getspnam(pwent->pw_name);
+    if (!entry) {
+      log_error("cannot find shadow password entry, see 'man dewlock' for info "
+                "on usage without PAM",
+                NULL);
       exit(EXIT_FAILURE);
     }
-    encpw.buf = swent->sp_pwdp;
+    hashed_password.buf = entry->sp_pwdp;
   }
-  encpw.cap = encpw.len = strlen(encpw.buf);
+  hashed_password.cap = hashed_password.len = strlen(hashed_password.buf);
 
-  if (setgid(getgid()) != 0) {
-    log_error("unable to drop root: %s", strerror(errno));
-    exit(EXIT_FAILURE);
-  }
-  if (setuid(getuid()) != 0) {
-    log_error("unable to drop root: %s", strerror(errno));
-    exit(EXIT_FAILURE);
-  }
-  if (setuid(0) != -1 || setgid(0) != -1) {
-    log_error("unable to drop root (we shouldn't be "
-              "able to restore it after setuid/setgid): %s",
-              strerror(errno));
+  if (setgid(getgid()) != 0 || setuid(getuid()) != 0 || setuid(0) != -1 ||
+      setgid(0) != -1) {
+    log_error("unable to drop root, aborting: %s", strerror(errno));
     exit(EXIT_FAILURE);
   }
 
@@ -63,12 +56,13 @@ void auth_init(int argc, char **argv) {
   }
 
   /* Buffer is only used by the child */
-  sbuf_clear(&encpw);
-  encpw.buf = NULL;
+  sbuf_clear(&hashed_password);
+  hashed_password.buf = NULL;
 }
 
 void auth_run(void) {
-  assert(encpw.buf != NULL && "encpw must be set before forking the pw backend child");
+  assert(hashed_password.buf != NULL &&
+         "encpw must be set before forking the pw backend child");
   while (1) {
     sbuf_t pw = {0};
     result_t res = auth_read_request(&pw);
@@ -78,14 +72,14 @@ void auth_run(void) {
       exit(EXIT_FAILURE);
     }
 
-    const char *c = crypt(pw.buf, encpw.buf);
+    const char *c = crypt(pw.buf, hashed_password.buf);
     sbuf_destroy(&pw);
 
     if (c == NULL) {
       log_error("crypt failed: %s", strerror(errno));
       exit(EXIT_FAILURE);
     }
-    bool success = strcmp(c, encpw.buf) == 0;
+    bool success = strcmp(c, hashed_password.buf) == 0;
 
     if (auth_write_reply(success) != OK) {
       exit(EXIT_FAILURE);
@@ -94,6 +88,6 @@ void auth_run(void) {
     sleep(2);
   }
 
-  sbuf_clear(&encpw);
+  sbuf_clear(&hashed_password);
   exit(EXIT_SUCCESS);
 }
