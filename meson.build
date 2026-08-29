@@ -158,5 +158,3 @@ if scdoc.found()
 		)
 	endforeach
 endif
-
-subdir('completions')
