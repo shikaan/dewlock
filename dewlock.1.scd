@@ -14,8 +14,9 @@ Locks your Wayland session.
 
 *-c, --config* <path>
 	The config file to use. By default, the following paths are checked:
-	_$HOME/.dewlock/config_, _$XDG\_CONFIG\_HOME/dewlock/config_, and
-	_SYSCONFDIR/dewlock/config_. See *CONFIGURATION* for details.
+	_$XDG\_CONFIG\_HOME/dewlock/config_ (or _$HOME/.config/dewlock/config_
+	if _$XDG\_CONFIG\_HOME_ is unset), and _SYSCONFDIR/dewlock/config_. See
+	*CONFIGURATION* for details.
 
 *-d, --debug*
 	Enable debugging output.
