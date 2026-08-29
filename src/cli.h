@@ -1,4 +1,5 @@
 #pragma once
+#include "result.h"
 #include <stdbool.h>
 
 #define NAME "dewlock"
@@ -10,5 +11,5 @@ typedef struct {
   int ready_fd;
 } cli_opts_t;
 
-void cli_parse(int argc, char *const *argv);
+result_t cli_parse(int argc, char *const *argv);
 void cli_get(cli_opts_t **opts);

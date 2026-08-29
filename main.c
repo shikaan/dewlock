@@ -37,11 +37,11 @@ static dewlock_state_t state;
 static const struct ext_session_lock_surface_v1_listener
     ext_session_lock_surface_v1_listener;
 
-static void daemonize(void) {
+static result_t daemonize(void) {
   int fds[2];
   if (pipe(fds) != 0) {
     log_error("Failed to pipe", NULL);
-    exit(1);
+    return ERR_DAEMON_PIPE;
   }
   if (fork() == 0) {
     setsid();
@@ -65,11 +65,13 @@ static void daemonize(void) {
     uint8_t success;
     if (read(fds[0], &success, 1) != 1 || !success) {
       log_error("Failed to daemonize", NULL);
-      exit(1);
+      return ERR_DAEMON_HANDSHAKE;
     }
     close(fds[0]);
     exit(0);
   }
+
+  return OK;
 }
 
 static void destroy_surface(dewlock_surface_t *surface) {
@@ -389,7 +391,10 @@ int main(int argc, char **argv) {
   // Parse argv once, fully, before forking the password backend (and, for
   // the shadow backend, dropping setuid root) so the log level is settled
   // beforehand.
-  cli_parse(argc, argv);
+  result_t result = cli_parse(argc, argv);
+  if (result != OK) {
+    return 1;
+  }
   cli_opts_t *opts;
   cli_get(&opts);
   log_init(opts->debug ? LOG_LEVEL_DEBUG : LOG_LEVEL_ERROR);
@@ -485,8 +490,8 @@ int main(int argc, char **argv) {
     close(opts->ready_fd);
     opts->ready_fd = -1;
   }
-  if (opts->daemonize) {
-    daemonize();
+  if (opts->daemonize && (result = daemonize()) != OK) {
+    goto cleanup;
   }
 
   loop_add_fd(state.eventloop, wl_display_get_fd(state.display), POLLIN,
@@ -510,12 +515,15 @@ int main(int argc, char **argv) {
     if (wl_display_flush(state.display) == -1 && errno != EAGAIN) {
       break;
     }
-    loop_poll(state.eventloop);
+    if ((result = loop_poll(state.eventloop)) != OK) {
+      break;
+    }
   }
 
+cleanup:
   clk_cancel_timer(&state);
   ext_session_lock_v1_unlock_and_destroy(state.ext_session_lock_v1);
   wl_display_roundtrip(state.display);
 
-  return 0;
+  return result == OK ? 0 : 1;
 }

@@ -20,8 +20,7 @@ typedef enum {
   INPUT_STATE_DIRTY,    // input was touched
 } input_state_t;
 
-typedef struct dewlock_state dewlock_state_t;
-struct dewlock_state {
+typedef struct dewlock_state {
   loop_t *eventloop;
   loop_timer_t *input_idle_timer;     // timer to reset input state to IDLE
   loop_timer_t *auth_idle_timer;      // timer to stop displaying error
@@ -44,7 +43,7 @@ struct dewlock_state {
   bool run_display, locked;
   struct ext_session_lock_manager_v1 *ext_session_lock_manager_v1;
   struct ext_session_lock_v1 *ext_session_lock_v1;
-};
+} dewlock_state_t;
 
 typedef struct {
   cairo_surface_t *image;

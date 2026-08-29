@@ -77,7 +77,7 @@ static void print_error(int opt, char *const *argv) {
   }
 }
 
-void cli_parse(int argc, char *const *argv) {
+result_t cli_parse(int argc, char *const *argv) {
   assert(argc > 0 && "argc must be positive");
   assert(argv && "argv must be non-null");
   int longind;
@@ -106,9 +106,11 @@ void cli_parse(int argc, char *const *argv) {
     default:
       print_error(opt, argv);
       print_help();
-      exit(1);
+      return ERR_CLI_INVALID_OPTION;
     }
   }
+
+  return OK;
 }
 
 void cli_get(cli_opts_t **opts) {
