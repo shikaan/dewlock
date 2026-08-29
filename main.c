@@ -414,6 +414,10 @@ int main(int argc, char **argv) {
   cfg_read(config_path, &state);
   free(resolved_config_path);
 
+  if (opts->debug) {
+    cfg_debug();
+  }
+
   if (sbuf_create(&state.password, 1024) != OK) {
     return EXIT_FAILURE;
   }

@@ -269,3 +269,29 @@ void cfg_get(cfg_t **out) {
   assert(out && "out must be non-null");
   *out = &cfg;
 }
+
+void cfg_debug(void) {
+  static const char *mode_names[] = {
+      [BACKGROUND_MODE_STRETCH] = "stretch",
+      [BACKGROUND_MODE_FILL] = "fill",
+      [BACKGROUND_MODE_FIT] = "fit",
+      [BACKGROUND_MODE_CENTER] = "center",
+      [BACKGROUND_MODE_TILE] = "tile",
+      [BACKGROUND_MODE_SOLID_COLOR] = "solid_color",
+      [BACKGROUND_MODE_INVALID] = "invalid",
+  };
+
+  log_debug("configuration:", NULL);
+  log_debug("  background.path=%s",
+            cfg.background.path ? cfg.background.path : "(null)");
+  log_debug("  background.mode=%s", mode_names[cfg.background.mode]);
+
+  log_debug("  font.family=%s", cfg.font.family);
+  log_debug("  font.size=%u", cfg.font.size);
+
+  log_debug("  color.background=0x%08X", cfg.colors.background);
+  log_debug("  color.overlay=0x%08X", cfg.colors.overlay);
+  log_debug("  color.text=0x%08X", cfg.colors.text);
+  log_debug("  color.warning=0x%08X", cfg.colors.warning);
+  log_debug("  color.error=0x%08X", cfg.colors.error);
+}

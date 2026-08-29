@@ -24,3 +24,4 @@ typedef struct {
 char *cfg_path(void);
 void cfg_read(const char *path, dewlock_state_t *state);
 void cfg_get(cfg_t **cfg);
+void cfg_debug(void);
