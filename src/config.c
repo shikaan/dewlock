@@ -142,14 +142,13 @@ static void load_image(dewlock_state_t *state) {
 
 char *cfg_path(void) {
   static const char *config_paths[] = {
-      "$HOME/.dewlock/config",
       "$XDG_CONFIG_HOME/dewlock/config",
       SYSCONFDIR "/dewlock/config",
   };
 
   char *config_home = getenv("XDG_CONFIG_HOME");
   if (!config_home || config_home[0] == '\0') {
-    config_paths[1] = "$HOME/.config/dewlock/config";
+    config_paths[0] = "$HOME/.config/dewlock/config";
   }
 
   wordexp_t p;
