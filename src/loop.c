@@ -63,7 +63,7 @@ void loop_destroy(loop_t *loop) {
   free(loop);
 }
 
-void loop_poll(loop_t *loop) {
+result_t loop_poll(loop_t *loop) {
   // Calculate next timer in ms
   int ms = INT_MAX;
   if (!wl_list_empty(&loop->timers)) {
@@ -85,7 +85,7 @@ void loop_poll(loop_t *loop) {
   int ret = poll(loop->fds, (nfds_t)loop->fd_length, ms);
   if (ret < 0 && errno != EINTR) {
     log_error("poll failed: %s", strerror(errno));
-    exit(1);
+    return ERR_LOOP_POLL;
   }
 
   // Dispatch fds
@@ -126,6 +126,8 @@ void loop_poll(loop_t *loop) {
       }
     }
   }
+
+  return OK;
 }
 
 void loop_add_fd(loop_t *loop, int fd, short mask,
