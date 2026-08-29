@@ -135,12 +135,12 @@ result_t auth_write_request(sbuf_t *pw) {
 
   size_t size = pw->len + 1;
   if (!write_full(fd, &size, sizeof(size))) {
-    log_error("Failed to write pw size: %s", strerror(errno));
+    log_error("failed to write pw size: %s", strerror(errno));
     goto out;
   }
 
   if (!write_full(fd, pw->buf, size)) {
-    log_error("Failed to write pw buffer: %s", strerror(errno));
+    log_error("failed to write pw buffer: %s", strerror(errno));
     goto out;
   }
 
@@ -153,7 +153,7 @@ out:
 
 result_t auth_read_reply(bool *auth_success) {
   if (read_full(pipes[1][0], auth_success, sizeof(*auth_success)) <= 0) {
-    log_error("Failed to read pw result", NULL);
+    log_error("failed to read pw result", NULL);
     return ERR_AUTH_READ;
   }
   return OK;

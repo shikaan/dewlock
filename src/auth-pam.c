@@ -16,7 +16,7 @@ void auth_init(int argc, char **argv) {
   (void)argc;
   if (getuid() != geteuid() || getgid() != getegid()) {
     log_error("dewlock is setuid, but was compiled with the PAM"
-              " backend. Run 'chmod a-s %s' to fix. Aborting.",
+              " backend, run 'chmod a-s %s' to fix",
               argv[0]);
     exit(EXIT_FAILURE);
   }
@@ -37,7 +37,7 @@ static int handle_conversation(int num_msg, const struct pam_message **msg,
   struct pam_response *pam_reply =
       calloc((size_t)num_msg, sizeof(struct pam_response));
   if (pam_reply == NULL) {
-    log_error("Allocation failed", NULL);
+    log_error("pam reply allocation failed", NULL);
     return PAM_ABORT;
   }
   *resp = pam_reply;
@@ -54,7 +54,7 @@ static int handle_conversation(int num_msg, const struct pam_message **msg,
       }
       pam_reply[i].resp = strdup(state->password); // PAM clears and frees this
       if (pam_reply[i].resp == NULL) {
-        log_error("Allocation failed", NULL);
+        log_error("pam reply response allocation failed", NULL);
         return PAM_ABORT;
       }
       state->password = NULL;
@@ -108,7 +108,7 @@ void auth_run(void) {
   }
 
   /* This code does not run as root */
-  log_debug("Prepared to authorize user %s", username);
+  log_debug("prepared to authorize user %s", username);
 
   int pam_status = PAM_SUCCESS;
   while (1) {
