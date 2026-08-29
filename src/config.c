@@ -12,6 +12,8 @@
 #include <unistd.h>
 #include <wordexp.h>
 
+#define len(Array) sizeof(Array) / sizeof(Array[0])
+
 #ifndef SYSCONFDIR
 #define SYSCONFDIR "/etc"
 #endif
@@ -143,17 +145,13 @@ static void load_image(dewlock_state_t *state) {
 char *cfg_path(void) {
   static const char *config_paths[] = {
       "$XDG_CONFIG_HOME/dewlock/config",
+      "$HOME/.config/dewlock/config",
       SYSCONFDIR "/dewlock/config",
   };
 
-  char *config_home = getenv("XDG_CONFIG_HOME");
-  if (!config_home || config_home[0] == '\0') {
-    config_paths[0] = "$HOME/.config/dewlock/config";
-  }
-
   wordexp_t p;
   char *path;
-  for (size_t i = 0; i < sizeof(config_paths) / sizeof(char *); ++i) {
+  for (size_t i = 0; i < len(config_paths); ++i) {
     if (wordexp(config_paths[i], &p, 0) == 0) {
       path = strdup(p.we_wordv[0]);
       wordfree(&p);
@@ -169,15 +167,15 @@ char *cfg_path(void) {
 
 void cfg_read(const char *path, dewlock_state_t *state) {
   assert(state && "state must be non-null");
-#define readstr(Prop, Value)                                                 \
-  if (streql(key, Value)) {                                                  \
-    (Prop) = strdup(value);                                                  \
-    continue;                                                                \
+#define readstr(Prop, Value)                                                   \
+  if (streql(key, Value)) {                                                    \
+    (Prop) = strdup(value);                                                    \
+    continue;                                                                  \
   }
-#define readcol(Prop, Value)                                                 \
-  if (streql(key, Value)) {                                                  \
-    (Prop) = color_from_string(value, Prop);                                 \
-    continue;                                                                \
+#define readcol(Prop, Value)                                                   \
+  if (streql(key, Value)) {                                                    \
+    (Prop) = color_from_string(value, Prop);                                   \
+    continue;                                                                  \
   }
 
   init();
