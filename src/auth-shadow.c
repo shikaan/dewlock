@@ -41,22 +41,22 @@ void auth_init(int argc, char **argv) {
   encpw.cap = encpw.len = strlen(encpw.buf);
 
   if (setgid(getgid()) != 0) {
-    log_error("Unable to drop root: %s", strerror(errno));
+    log_error("unable to drop root: %s", strerror(errno));
     exit(EXIT_FAILURE);
   }
   if (setuid(getuid()) != 0) {
-    log_error("Unable to drop root: %s", strerror(errno));
+    log_error("unable to drop root: %s", strerror(errno));
     exit(EXIT_FAILURE);
   }
   if (setuid(0) != -1 || setgid(0) != -1) {
-    log_error("Unable to drop root (we shouldn't be "
+    log_error("unable to drop root (we shouldn't be "
               "able to restore it after setuid/setgid): %s",
               strerror(errno));
     exit(EXIT_FAILURE);
   }
 
   /* This code does not run as root */
-  log_debug("Prepared to authorize user %s", pwent->pw_name);
+  log_debug("prepared to authorize user %s", pwent->pw_name);
 
   if (auth_spawn_child() != OK) {
     exit(EXIT_FAILURE);

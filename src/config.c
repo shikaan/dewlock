@@ -101,10 +101,10 @@ static void load_image(dewlock_state_t *state) {
   wl_list_for_each_safe(iter_image, temp, &state->images, link) {
     if (lenient_strcmp(iter_image->output_name, image->output_name) == 0) {
       if (image->output_name) {
-        log_debug("Replacing image defined for output %s with %s",
+        log_debug("replacing image defined for output %s with %s",
                   image->output_name, image->path);
       } else {
-        log_debug("Replacing default image with %s", image->path);
+        log_debug("replacing default image with %s", image->path);
       }
       wl_list_remove(&iter_image->link);
       free(iter_image->cairo_surface);
@@ -138,7 +138,7 @@ static void load_image(dewlock_state_t *state) {
     return;
   }
   wl_list_insert(&state->images, &image->link);
-  log_debug("Loaded image %s for output %s", image->path,
+  log_debug("loaded image %s for output %s", image->path,
             image->output_name ? image->output_name : "*");
 }
 

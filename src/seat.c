@@ -24,7 +24,7 @@ static void keyboard_keymap(void *data, struct wl_keyboard *wl_keyboard,
     char *map_shm = mmap(NULL, size - 1, PROT_READ, MAP_PRIVATE, fd, 0);
     if (map_shm == MAP_FAILED) {
       close(fd);
-      log_error("Unable to initialize keymap shm, aborting", NULL);
+      log_error("unable to initialize keymap shm, aborting", NULL);
       exit(1);
     }
     keymap = xkb_keymap_new_from_buffer(state->xkb.context, map_shm, size - 1,
@@ -32,13 +32,13 @@ static void keyboard_keymap(void *data, struct wl_keyboard *wl_keyboard,
                                         XKB_KEYMAP_COMPILE_NO_FLAGS);
     munmap(map_shm, size - 1);
     if (!keymap) {
-      log_error("Failed to compile keymap, aborting", NULL);
+      log_error("failed to compile keymap, aborting", NULL);
       exit(1);
     }
 
     xkb_state = xkb_state_new(keymap);
     if (!xkb_state) {
-      log_error("Failed to create xkb_state, aborting", NULL);
+      log_error("failed to create xkb_state, aborting", NULL);
       exit(1);
     }
     break;

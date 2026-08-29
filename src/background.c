@@ -19,7 +19,7 @@ background_mode_t bg_parse_mode(const char *mode) {
   } else if (strcmp(mode, "solid_color") == 0) {
     return BACKGROUND_MODE_SOLID_COLOR;
   }
-  log_error("Unsupported background mode: %s", mode);
+  log_error("unsupported background mode: %s", mode);
   return BACKGROUND_MODE_INVALID;
 }
 
@@ -27,11 +27,11 @@ cairo_surface_t *bg_load_image(const char *path) {
   assert(path && "path must be non-null");
   cairo_surface_t *image = cairo_image_surface_create_from_png(path);
   if (!image) {
-    log_error("Failed to read background image.", NULL);
+    log_error("failed to read background image", NULL);
     return NULL;
   }
   if (cairo_surface_status(image) != CAIRO_STATUS_SUCCESS) {
-    log_error("Failed to read background image: %s.",
+    log_error("failed to read background image: %s",
               cairo_status_to_string(cairo_surface_status(image)));
     return NULL;
   }

@@ -38,7 +38,7 @@ struct loop {
 loop_t *loop_create(void) {
   loop_t *loop = calloc(1, sizeof(loop_t));
   if (!loop) {
-    log_error("Unable to allocate memory for loop", NULL);
+    log_error("unable to allocate memory for loop", NULL);
     return NULL;
   }
   loop->fd_capacity = 10;
@@ -134,7 +134,7 @@ void loop_add_fd(loop_t *loop, int fd, short mask,
   assert(callback && "callback must be non-null");
   loop_fd_event_t *event = calloc(1, sizeof(loop_fd_event_t));
   if (!event) {
-    log_error("Unable to allocate memory for event", NULL);
+    log_error("unable to allocate memory for event", NULL);
     return;
   }
   event->callback = callback;
@@ -158,7 +158,7 @@ loop_timer_t *loop_add_timer(loop_t *loop, int ms,
   assert(callback && "callback must be non-null");
   loop_timer_t *timer = calloc(1, sizeof(loop_timer_t));
   if (!timer) {
-    log_error("Unable to allocate memory for timer", NULL);
+    log_error("unable to allocate memory for timer", NULL);
     return NULL;
   }
   timer->callback = callback;

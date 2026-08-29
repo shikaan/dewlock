@@ -31,17 +31,17 @@ static result_t lock_buffer(char *addr, size_t size) {
     case EAGAIN:
       retries--;
       if (retries == 0) {
-        log_error("mlock() supported but failed too often.", NULL);
+        log_error("mlock() supported but failed too often", NULL);
         return ERR_SBUF_LOCK;
       }
       break;
     case EPERM:
-      log_error("Unable to mlock() password memory: Unsupported!: %s",
+      log_error("unable to mlock() password memory: unsupported: %s",
                 strerror(errno));
       mlock_supported = false;
       return OK;
     default:
-      log_error("Unable to mlock() password memory: %s", strerror(errno));
+      log_error("unable to mlock() password memory: %s", strerror(errno));
       return ERR_SBUF_LOCK;
     }
   }
@@ -81,7 +81,7 @@ void sbuf_destroy(sbuf_t *sbuf) {
          "sbuf->buf must be page-aligned");
   memset(sbuf->buf, 0, sbuf->cap);
   if (mlock_supported && munlock(sbuf->buf, sbuf->cap) != 0) {
-    log_warn("Unable to munlock() password memory: %s", strerror(errno));
+    log_warn("unable to munlock() password memory: %s", strerror(errno));
   }
   free(sbuf->buf);
   sbuf->buf = NULL;
