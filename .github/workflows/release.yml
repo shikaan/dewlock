@@ -1,0 +1,107 @@
+name: release
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        run: |
+          sha="$(git rev-parse --short HEAD)"
+          echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" = "release" ]; then
+            tag="${{ github.event.release.tag_name }}"
+            echo "version=${tag}" >> "$GITHUB_OUTPUT"
+            echo "deb_version=${tag#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=v0.0.0-${sha}" >> "$GITHUB_OUTPUT"
+            echo "deb_version=0.0.0+${sha}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq build-essential debhelper devscripts \
+            pkg-config libwayland-dev libwayland-bin libxkbcommon-dev \
+            libcairo2-dev libpam0g-dev scdoc lintian
+
+      - name: Stage debian packaging
+        run: cp -r packaging/deb debian
+
+      - name: Stamp package version
+        run: |
+          cat > debian/changelog <<EOF
+          dewlock (${{ steps.version.outputs.deb_version }}-1) unstable; urgency=medium
+
+            * CI build of ${{ steps.version.outputs.version }} (${{ steps.version.outputs.sha }}).
+
+           -- Manuel Spagnolo <shikaan@disroot.org>  $(date -R)
+          EOF
+
+      - name: Build package
+        env:
+          SHA: ${{ steps.version.outputs.sha }}
+        run: dpkg-buildpackage -b -us -uc
+
+      - name: Lint package
+        run: lintian ../*.deb || true
+
+      - name: Collect package
+        run: |
+          mkdir -p dist
+          mv ../*.deb dist/
+          ls -l dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dewlock-deb-${{ matrix.arch }}
+          path: dist/*.deb
+          if-no-files-found: error
+
+  publish:
+    if: github.event_name == 'release'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dewlock-deb-amd64
+          path: dist
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dewlock-deb-arm64
+          path: dist
+
+      - name: Attach the packages to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          ls -l dist
+          gh release upload "${{ github.event.release.tag_name }}" \
+            dist/*.deb \
+            --clobber
