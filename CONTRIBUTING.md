@@ -5,7 +5,6 @@ Contributing
 
 Install dependencies:
 
-* meson \*
 * wayland
 * libxkbcommon
 * cairo
@@ -16,9 +15,7 @@ Install dependencies:
 _\* Compile-time dep_
 
 ```sh
-meson build
-ninja -C build
-sudo ninja -C build install
+make all
 ```
 
 ## Building from source (container)
