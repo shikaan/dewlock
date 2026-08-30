@@ -1,11 +1,10 @@
 from debian:trixie as base
 
 run apt update
+
 run apt install -y \
   build-essential \
   pkg-config \
-  meson \
-  ninja-build \
   git \
   libxkbcommon-dev \
   libwayland-dev \
