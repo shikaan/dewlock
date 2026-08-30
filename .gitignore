@@ -3,7 +3,7 @@ build
 .nvim.lua
 
 **/*.o
-main
+main-*
 .cache
 
 protocols/*.h
