@@ -39,6 +39,10 @@ Locks your Wayland session.
 *-v, --version*
 	Show the version number and quit.
 
+*-p, --pam*
+	Create the PAM configuration and quit. Run this option with sudo. See
+	*AUTHENTICATION* for details.
+
 # CONFIGURATION
 
 The config file consists of _namespace.key=value_ pairs, one per line. Lines
@@ -97,6 +101,43 @@ color.error=CC6566FF
 
 _background.path_ has no default; no background image is drawn unless one is
 set.
+
+# AUTHENTICATION
+
+## With PAM
+
+On most systems, dewlock does not need a dedicated PAM configuration. It
+uses the PAM fallback service.
+
+On some systems, dewlock needs a dedicated PAM configuration. Without it,
+dewlock can lock the screen and not unlock again.
+
+To configure PAM, run *dewlock -p*. Alternatively, copy _pam/dewlock_ from
+the dewlock source folder to _/etc/pam.d/dewlock_.
+
+## Without PAM
+
+On systems without PAM, dewlock uses _shadow.h_.
+
+Systems with a tcb-like setup (via musl's native support, or via
+glibc+tcb) need no further action.
+
+On other systems, _/etc/shadow_ stores the passwords for all users.
+dewlock needs the setuid bit:
+
+```
+sudo chmod a+s /usr/local/bin/dewlock
+```
+
+If _/etc/shadow_ belongs to the _shadow_ group, use the setgid bit
+instead:
+
+```
+sudo chgrp shadow /usr/local/bin/dewlock
+sudo chmod g+s /usr/local/bin/dewlock
+```
+
+dewlock drops root permissions shortly after it starts.
 
 # SIGNALS
 

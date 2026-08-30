@@ -27,10 +27,10 @@ Using `docker` or `podman` you can
 
 ```sh
 # build the development image
-podman build . -t dewlock-dev
+podman build . -t dewlock
 
 # run the development container
-podman run --rm -it -v "$(pwd):/src:Z" --name dewlock dewlock-dev
+podman run --rm -it -v "$(pwd):/src:Z" --name dewlock dewlock
 ```
 
 ## Using LSPs

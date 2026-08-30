@@ -1,14 +1,17 @@
 #include "cli.h"
+#include "log.h"
 #include <assert.h>
+#include <errno.h>
 #include <getopt.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #define len(Array) sizeof(Array) / sizeof(Array[0])
 
-static const char *OPTSTR = ":c:dfr:hv";
+static const char *OPTSTR = ":c:dfr:hvp";
 static struct option OPTIONS[] = {
     {"config", required_argument, 0, 'c'},
     {"debug", no_argument, 0, 'd'},
@@ -16,6 +19,7 @@ static struct option OPTIONS[] = {
     {"ready-fd", required_argument, 0, 'r'},
     {"help", no_argument, 0, 'h'},
     {"version", no_argument, 0, 'v'},
+    {"pam", no_argument, 0, 'p'},
     {0, 0, 0, 0},
 };
 #define NUM_OPTIONS (len(OPTIONS) - 1)
@@ -26,10 +30,8 @@ static const char *DESC[NUM_OPTIONS] = {
     "File descriptor to send readiness notifications to.",
     "Show this help message and quit.",
     "Show the version number and quit.",
-};
-static const char *ARGS[NUM_OPTIONS] = {
-    "path", "", "", "fd", "", "",
-};
+    "Create PAM configuration and quit. Must be run as sudo."};
+static const char *ARGS[NUM_OPTIONS] = {"path", "", "", "fd", "", "", ""};
 
 static cli_opts_t cli_opts = {
     .config = NULL,
@@ -73,7 +75,36 @@ static void print_error(int opt, char *const *argv) {
       fprintf(out, "%s: invalid option '%s'\n", NAME, argv[optind - 1]);
     }
   } else {
-    fprintf(out, "%s: option '%s' requires an argument\n", NAME, argv[optind - 1]);
+    fprintf(out, "%s: option '%s' requires an argument\n", NAME,
+            argv[optind - 1]);
+  }
+}
+
+static void create_pam_configuration(void) {
+  FILE *config = fopen("/etc/pam.d/dewlock", "w+");
+  if (!config) {
+    log_error("unable to create PAM configuration: %s; retry with sudo or "
+              "run 'man dewlock' for manual instructions",
+              strerror(errno));
+    exit(1);
+  }
+
+  if (fchmod(fileno(config), 0644) != 0) {
+    log_error("unable to secure PAM configuration: %s; retry with sudo or "
+              "run 'man dewlock' for manual instructions",
+              strerror(errno));
+    exit(1);
+  }
+
+  const char config_string[] = "auth include login\n";
+  const size_t config_string_len = sizeof(config_string);
+  size_t written = fwrite(config_string, config_string_len, 1, config);
+
+  if (written != 1) {
+    log_error("unable to write PAM configuration; retry with sudo or run "
+              "'man dewlock' for manual instructions",
+              NULL);
+    exit(1);
   }
 }
 
@@ -102,6 +133,9 @@ result_t cli_parse(int argc, char *const *argv) {
       exit(0);
     case 'v':
       print_version();
+      exit(0);
+    case 'p':
+      create_pam_configuration();
       exit(0);
     default:
       print_error(opt, argv);
