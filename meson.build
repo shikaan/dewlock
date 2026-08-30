@@ -28,7 +28,6 @@ if is_freebsd
 endif
 
 wayland_client = dependency('wayland-client', version: '>=1.20.0')
-wayland_protos = dependency('wayland-protocols', version: '>=1.25', fallback: 'wayland-protocols')
 wayland_scanner = dependency('wayland-scanner', version: '>=1.15.0', native: true)
 xkbcommon = dependency('xkbcommon')
 cairo = dependency('cairo')
@@ -54,8 +53,6 @@ if git.found()
 	endif
 endif
 
-wl_protocol_dir = wayland_protos.get_variable('pkgdatadir')
-
 wayland_scanner_code = generator(
 	wayland_scanner_prog,
 	output: '@BASENAME@-protocol.c',
@@ -69,7 +66,9 @@ wayland_scanner_client = generator(
 )
 
 client_protocols = [
-	wl_protocol_dir / 'staging/ext-session-lock/ext-session-lock-v1.xml',
+	# Vendored so the build doesn't depend on wayland-protocols being
+	# installed on the target machine.
+	'protocols/ext-session-lock-v1.xml',
 ]
 
 protos_src = []

@@ -7,7 +7,6 @@ Install dependencies:
 
 * meson \*
 * wayland
-* wayland-protocols \*
 * libxkbcommon
 * cairo
 * pam (optional)
