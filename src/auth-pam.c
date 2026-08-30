@@ -13,6 +13,7 @@
 #include <unistd.h>
 
 void auth_init(int argc, char **argv) {
+  log_info("using PAM backend", NULL);
   (void)argc;
   if (getuid() != geteuid() || getgid() != getegid()) {
     log_error("dewlock is setuid, but was compiled with the PAM"

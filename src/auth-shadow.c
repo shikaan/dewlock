@@ -23,6 +23,8 @@ static sbuf_t hashed_password = {0};
 void auth_init(int argc, char **argv) {
   (void)argc;
   (void)argv;
+
+  log_info("using shadow backend", NULL);
   /* This code runs as root */
   struct passwd *pwent = getpwuid(getuid());
   if (!pwent) {
@@ -75,8 +77,8 @@ void auth_run(void) {
     const char *c = crypt(pw.buf, hashed_password.buf);
     sbuf_destroy(&pw);
 
-    if (c == NULL) {
-      log_error("crypt failed: %s", strerror(errno));
+    if (c == NULL || c[0] == '*' || strlen(c) != hashed_password.len) {
+      log_error("unsupported password hash format: %s", strerror(errno));
       exit(EXIT_FAILURE);
     }
     bool success = strcmp(c, hashed_password.buf) == 0;
