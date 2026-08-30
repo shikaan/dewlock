@@ -8,5 +8,7 @@ main-*
 
 protocols/*.h
 protocols/*.c
+dewlock.1.roff
+dewlock.1.scd
 
 docs
