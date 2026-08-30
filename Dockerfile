@@ -6,6 +6,9 @@ run apt install -y \
   build-essential \
   pkg-config \
   git \
+  scdoc
+
+run apt install -y \
   libxkbcommon-dev \
   libwayland-dev \
   libcairo2-dev \

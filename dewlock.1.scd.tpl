@@ -1,4 +1,4 @@
-dewlock(1)
+dewlock(1) "##VERSION## (##SHA##)"
 
 # NAME
 

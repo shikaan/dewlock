@@ -64,7 +64,18 @@ BIN_NAME = "main-${BUILD_TYPE}-${AUTH_BACKEND}"
 .PHONY: all install clean help
 
 ##T all     - build the binary (default)
-all: main
+all: main docs
+
+##T docs - generate the manpage from the scdoc template
+docs: dewlock.1.scd.tpl
+	@if command -v scdoc > /dev/null 2>&1; then \
+		echo "Generating manpage dewlock.1.roff..."; \
+		sed "s/##VERSION##/${VERSION}/g; s/##SHA##/${SHA}/g" dewlock.1.scd.tpl > dewlock.1.scd; \
+		scdoc < dewlock.1.scd > dewlock.1.roff; \
+		echo "Generating manpage dewlock.1.roff... DONE"; \
+	else \
+		echo "WARN: Unable to find scdoc. Skipping manpage generation."; \
+	fi
 
 ##T install - install the executable, manpage and configuration
 install: MAN_FOLDER := ~/.local/share/man/man1
@@ -84,18 +95,22 @@ install:
 	@mkdir -p ${BIN_FOLDER}
 	@cp ${BIN_NAME} ${BIN_FOLDER}/dewlock
 	@chmod +x ${BIN_FOLDER}/dewlock
-	@echo "  Binary    : ${BIN_FOLDER}/dewlock"
+	@echo "Installing dewlock... DONE"
 	@if [ -f dewlock.1.roff ]; then \
+		echo "Installing manpages..."; \
 		mkdir -p ${MAN_FOLDER}; \
 		cp dewlock.1.roff ${MAN_FOLDER}/dewlock.1; \
-		echo "  Man       : ${MAN_FOLDER}/dewlock.1"; \
+		echo "Installing manpages... DONE"; \
 	fi
 ifeq ($(AUTH_BACKEND),pam)
+	@echo "Installing PAM configuration..."
 	@cp pam/dewlock /etc/pam.d/dewlock
-	@echo "  PAM       : /etc/pam.d/dewlock"
+	@echo "Installing PAM configuration... DONE"
 else
+	@echo "Setting permissions..."
 	@chgrp shadow ${BIN_FOLDER}/dewlock
 	@chmod g+s ${BIN_FOLDER}/dewlock
+	@echo "Setting permissions... DONE"
 endif
 
 ##T help    - list available targets
