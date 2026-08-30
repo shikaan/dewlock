@@ -31,7 +31,7 @@ RELEASE_CFLAGS := -O2 -DNDEBUG
 
 # ------------------
 
-##V BUILD_TYPE   - use 'release' to skip debug symbols (default: 'debug')
+##P BUILD_TYPE   - use 'release' to skip debug symbols (default: 'debug')
 BUILD_TYPE ?= debug
 ifeq ($(BUILD_TYPE),release)
     CFLAGS := $(COMMON_CFLAGS) $(RELEASE_CFLAGS)
@@ -41,7 +41,7 @@ else
     LDFLAGS += $(SANITIZERS)
 endif
 
-##V AUTH_BACKEND - 'pam' for libpam, 'shadow' for shadow (default: 'pam')
+##P AUTH_BACKEND - 'pam' for libpam, 'shadow' for shadow (default: 'pam')
 AUTH_BACKEND ?= pam
 ifeq ($(AUTH_BACKEND),pam)
     AUTH := src/auth-pam.o
@@ -51,10 +51,10 @@ else
     AUTH_LIBS := -lcrypt
 endif
 
-##V VERSION      - version number in help and manpages (default: 'v0.0.0')
+##P VERSION      - version number in help and manpages (default: 'v0.0.0')
 VERSION ?= v0.0.0
 
-##V SHA          - SHA hash in help and manpages (default: 'dev')
+##P SHA          - SHA hash in help and manpages (default: 'dev')
 SHA ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
 
 # ------------------
@@ -103,7 +103,7 @@ help:
 	@echo "Usage: make [parameters] [target]"
 	@echo
 	@echo "Parameters:"
-	@grep -e '^##V ' $(MAKEFILE_LIST) | sed 's/^##V /  /'
+	@grep -e '^##P ' $(MAKEFILE_LIST) | sed 's/^##P /  /'
 	@echo
 	@echo "Targets:"
 	@grep -e '^##T ' $(MAKEFILE_LIST) | sed 's/^##T /  /'
