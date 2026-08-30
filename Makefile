@@ -1,5 +1,3 @@
-BUILD_TYPE ?= debug
-
 COMMON_CFLAGS := -std=c11 \
 	-D_POSIX_C_SOURCE=200809L \
 	-Wall \
@@ -31,6 +29,10 @@ DEBUG_CFLAGS := -g -O0 $(SANITIZERS) -DDEBUG
 
 RELEASE_CFLAGS := -O2 -DNDEBUG
 
+# ------------------
+
+##V BUILD_TYPE   - use 'release' to skip debug symbols (default: 'debug')
+BUILD_TYPE ?= debug
 ifeq ($(BUILD_TYPE),release)
     CFLAGS := $(COMMON_CFLAGS) $(RELEASE_CFLAGS)
     LDFLAGS += -s
@@ -39,81 +41,84 @@ else
     LDFLAGS += $(SANITIZERS)
 endif
 
-DEPS := wayland-client xkbcommon cairo
-DEPS_CFLAGS := $(shell pkg-config --cflags $(DEPS))
-DEPS_LIBS := $(shell pkg-config --libs $(DEPS))
-
-# PAM=1 authenticates via libpam (src/auth-pam.c); PAM=0 authenticates via
-# /etc/shadow (src/auth-shadow.c) and requires the binary to run setuid root.
-PAM ?= 1
-
-ifeq ($(PAM),1)
-    AUTH_BACKEND := src/auth-pam.o
-    AUTH_BACKEND_LIBS := -lpam
+##V AUTH_BACKEND - 'pam' for libpam, 'shadow' for shadow (default: 'pam')
+AUTH_BACKEND ?= pam
+ifeq ($(AUTH_BACKEND),pam)
+    AUTH := src/auth-pam.o
+    AUTH_LIBS := -lpam
 else
-    AUTH_BACKEND := src/auth-shadow.o
-    AUTH_BACKEND_LIBS := -lcrypt
+    AUTH := src/auth-shadow.o
+    AUTH_LIBS := -lcrypt
 endif
+
+##V VERSION      - version number in help and manpages (default: 'v0.0.0')
+VERSION ?= v0.0.0
+
+##V SHA          - SHA hash in help and manpages (default: 'dev')
+SHA ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
 
 # ------------------
 
-# Vendored so the build doesn't depend on wayland-protocols being installed
-# on the target machine.
-EXT_SESSION_LOCK := protocols/ext-session-lock-v1.xml
-
-VERSION ?= v0.0.0
-SHA ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
+BIN_NAME = "main-${BUILD_TYPE}-${AUTH_BACKEND}"
 
 .PHONY: all install clean help
 
-### all - build the binary (default)
+##T all     - build the binary (default)
 all: main
 
-### install - build in release mode and install the executable, manpage and PAM config
+##T install - install the executable, manpage and configuration
 install: MAN_FOLDER := ~/.local/share/man/man1
 install: BIN_FOLDER := ~/.local/bin
 install:
+	@if [ "$$(id -u)" != "0" ]; then \
+		echo "ERROR: 'make install' must be run as admin. Retry with sudo.";\
+		exit 1; \
+	fi
+	@if [ ! -f ${BIN_NAME} ]; then \
+		echo "ERROR: missing or mismatching binary. You can:";\
+		echo " - run 'make BUILD_TYPE=${BUILD_TYPE} AUTH_BACKEND=${AUTH_BACKEND} all'";\
+		echo " - run 'make install' with the correct parameters";\
+		exit 1; \
+	fi
 	@echo "Installing dewlock..."
-	@make -s clean
-	@make -s BUILD_TYPE=release PAM=$(PAM) VERSION=$(VERSION) SHA=$(SHA) all
 	@mkdir -p ${BIN_FOLDER}
-	@cp ./main ${BIN_FOLDER}/dewlock
+	@cp ${BIN_NAME} ${BIN_FOLDER}/dewlock
 	@chmod +x ${BIN_FOLDER}/dewlock
-	@echo "Installing dewlock... DONE"
-	@echo "  Executable: ${BIN_FOLDER}/dewlock"
+	@echo "  Binary    : ${BIN_FOLDER}/dewlock"
 	@if [ -f dewlock.1.roff ]; then \
 		mkdir -p ${MAN_FOLDER}; \
 		cp dewlock.1.roff ${MAN_FOLDER}/dewlock.1; \
 		echo "  Man       : ${MAN_FOLDER}/dewlock.1"; \
 	fi
-ifeq ($(PAM),1)
-	@if [ "$$(id -u)" = "0" ]; then \
-		cp pam/dewlock /etc/pam.d/dewlock; \
-		echo "  PAM       : /etc/pam.d/dewlock"; \
-	else \
-		echo "WARN: not root, skipping PAM config install."; \
-		echo "      Run as root, or manually install pam/dewlock to /etc/pam.d/dewlock"; \
-	fi
+ifeq ($(AUTH_BACKEND),pam)
+	@cp pam/dewlock /etc/pam.d/dewlock
+	@echo "  PAM       : /etc/pam.d/dewlock"
+else
+	@chgrp shadow ${BIN_FOLDER}/dewlock
+	@chmod g+s ${BIN_FOLDER}/dewlock
 endif
 
-### help - list available targets
+##T help    - list available targets
 help:
-	@echo "Usage: make [target]"
+	@echo "Usage: make [parameters] [target]"
+	@echo
+	@echo "Parameters:"
+	@grep -e '^##V ' $(MAKEFILE_LIST) | sed 's/^##V /  /'
 	@echo
 	@echo "Targets:"
-	@grep -E '^### ' $(MAKEFILE_LIST) | sed 's/^### /  /'
+	@grep -e '^##T ' $(MAKEFILE_LIST) | sed 's/^##T /  /'
 
-### clean - remove build artifacts
+##T clean   - remove build artifacts
 clean:
-	rm -f main *.o src/*.o protocols/*.c protocols/*.h
+	rm -f main-* *.o src/*.o protocols/*.c protocols/*.h
 
 # ---------------------
 
 protocols/ext-session-lock-v1-client-protocol.h:
-	wayland-scanner client-header $(EXT_SESSION_LOCK) $@
+	wayland-scanner client-header ./protocols/ext-session-lock-v1.xml $@
 
 protocols/ext-session-lock-v1-protocol.c: protocols/ext-session-lock-v1-client-protocol.h
-	wayland-scanner private-code $(EXT_SESSION_LOCK) $@
+	wayland-scanner private-code ./protocols/ext-session-lock-v1.xml $@
 
 protocols/ext-session-lock-v1-protocol.o: CFLAGS := -O2
 protocols/ext-session-lock-v1-protocol.o: protocols/ext-session-lock-v1-client-protocol.h \
@@ -133,11 +138,12 @@ src/seat.o: src/log.o src/loop.o
 src/auth-pam.o: src/auth.o src/log.o src/safebuf.o
 src/auth-shadow.o: src/auth.o src/log.o src/safebuf.o
 
-main: CFLAGS += -Isrc $(DEPS_CFLAGS) \
+main: CFLAGS += -Isrc $(shell pkg-config --cflags wayland-client xkbcommon cairo) \
 	-isystem protocols -DVERSION='"$(VERSION)"' -DSHA='"$(SHA)"'
-main: LDLIBS += $(DEPS_LIBS) $(AUTH_BACKEND_LIBS) -lm -lrt
+main: LDLIBS += $(shell pkg-config --libs wayland-client xkbcommon cairo) \
+	$(AUTH_LIBS) -lm -lrt
 main: main.o protocols/ext-session-lock-v1-protocol.o src/auth.o \
 	src/background.o src/cli.o src/clock.o src/config.o src/ctx.o \
 	src/log.o src/loop.o src/password.o \
-	src/render.o src/safebuf.o src/seat.o src/unicode.o $(AUTH_BACKEND)
-	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
+	src/render.o src/safebuf.o src/seat.o src/unicode.o $(AUTH)
+	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o ${BIN_NAME}
