@@ -21,6 +21,7 @@
 #include <pwd.h>
 #include <signal.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,7 +53,8 @@ static result_t daemonize(void) {
     close(devnull);
     uint8_t success = 0;
     if (chdir("/") != 0) {
-      write(fds[1], &success, 1);
+      ssize_t written = write(fds[1], &success, 1);
+      (void)written;
       exit(1);
     }
     success = 1;
@@ -331,7 +333,8 @@ static int sigusr_fds[2] = {-1, -1};
 
 void do_sigusr(int sig) {
   (void)sig;
-  (void)write(sigusr_fds[1], "1", 1);
+  ssize_t written = write(sigusr_fds[1], "1", 1);
+  (void)written;
 }
 
 static cairo_surface_t *select_image(dewlock_state_t *s,
