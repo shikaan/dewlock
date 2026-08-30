@@ -31,6 +31,27 @@ Configuration lives in a single `namespace.key=value` file (by default
 `$XDG_CONFIG_HOME/dewlock/config`). See [dewlock(1)](dewlock.1.scd) for
 every option and configuration key.
 
+##### With PAM
+
+On most systems, dewlock does not need a dedicated PAM configuration. It
+uses the PAM fallback service.
+
+On some systems, dewlock needs a dedicated PAM configuration. Without it,
+dewlock can lock the screen and not unlock again.
+
+To configure PAM, run this command:
+
+```
+dewlock --pam
+```
+
+You can also configure PAM manually:
+
+```
+# from dewlock folder
+cp pam/dewlock /etc/pam.d/dewlock
+```
+
 ##### Without PAM
 
 On systems without PAM, dewlock uses `shadow.h`.
