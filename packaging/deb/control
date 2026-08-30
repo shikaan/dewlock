@@ -1,0 +1,31 @@
+Source: dewlock
+Section: x11
+Priority: optional
+Maintainer: Manuel Spagnolo <shikaan@disroot.org>
+Build-Depends: debhelper-compat (= 13),
+               pkg-config,
+               libwayland-dev,
+               libwayland-bin,
+               libxkbcommon-dev,
+               libcairo2-dev,
+               libpam0g-dev,
+               scdoc
+Standards-Version: 4.6.2
+Homepage: https://github.com/shikaan/dewlock
+Rules-Requires-Root: no
+
+Package: dewlock
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: screen locker for Wayland compositors
+ dewlock is a customizable screen locker for Wayland, focused on
+ providing a beautiful user experience with sensible defaults.
+ .
+ It works with any compositor implementing the ext-session-lock-v1
+ protocol, including sway, Hyprland, river and niri.
+ .
+ Authentication goes through PAM, using /etc/pam.d/dewlock, and honors
+ the system's existing authentication policy.
+ .
+ dewlock can detach from the terminal and report readiness over a file
+ descriptor, so it can integrate with idle managers such as swayidle.

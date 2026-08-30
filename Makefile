@@ -29,13 +29,18 @@ DEBUG_CFLAGS := -g -O0 $(SANITIZERS) -DDEBUG
 
 RELEASE_CFLAGS := -O2 -DNDEBUG
 
+RELEASE_DEB_CFLAGS := $(RELEASE_CFLAGS) -g
+
 # ------------------
 
-##P BUILD_TYPE   - use 'debug' for sanitizers and debug symbols (default: 'release')
+##P BUILD_TYPE   - 'debug' for sanitizers, 'release-deb' to keep debug
+##P                symbols for packaging (default: 'release')
 BUILD_TYPE ?= release
 ifeq ($(BUILD_TYPE),debug)
     CFLAGS := $(COMMON_CFLAGS) $(DEBUG_CFLAGS)
     LDFLAGS += $(SANITIZERS)
+else ifeq ($(BUILD_TYPE),release-deb)
+    CFLAGS := $(COMMON_CFLAGS) $(RELEASE_DEB_CFLAGS)
 else
     CFLAGS := $(COMMON_CFLAGS) $(RELEASE_CFLAGS)
     LDFLAGS += -s
