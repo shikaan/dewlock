@@ -57,8 +57,9 @@ endif
 
 # ------------------
 
-WAYLAND_PROTOCOLS_DIR := $(shell pkg-config --variable=pkgdatadir wayland-protocols)
-EXT_SESSION_LOCK := $(WAYLAND_PROTOCOLS_DIR)/staging/ext-session-lock/ext-session-lock-v1.xml
+# Vendored so the build doesn't depend on wayland-protocols being installed
+# on the target machine.
+EXT_SESSION_LOCK := protocols/ext-session-lock-v1.xml
 
 VERSION ?= v0.0.0
 SHA ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)

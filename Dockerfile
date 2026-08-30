@@ -7,7 +7,6 @@ run apt install -y \
   meson \
   ninja-build \
   git \
-  wayland-protocols \
   libxkbcommon-dev \
   libwayland-dev \
   libcairo2-dev \
