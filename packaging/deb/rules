@@ -1,0 +1,12 @@
+#!/usr/bin/make -f
+
+include /usr/share/dpkg/pkg-info.mk
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	dh_auto_build -- BUILD_TYPE=release-deb VERSION=v$(DEB_VERSION_UPSTREAM) SHA=deb
+
+override_dh_auto_install:
+	$(MAKE) install BUILD_TYPE=release-deb PREFIX=/usr DESTDIR=$(CURDIR)/debian/dewlock
