@@ -16,29 +16,26 @@ password in the field to unlock the screen.
 
 ## Installation
 
-There are no packaged builds yet. See [CONTRIBUTING.md](CONTRIBUTING.md) to
-build from source.
-
-### Shell completions
-
-You can also install shell completions:
+There are no packaged builds yet. First, install the dependencies listed in
+[CONTRIBUTING.md](CONTRIBUTING.md). Then build and install dewlock from
+source:
 
 ```sh
-# bash
-curl -sL --create-dirs \
-  https://raw.githubusercontent.com/shikaan/dewlock/main/completions/dewlock.bash \
-  -o ~/.local/share/bash-completion/completions/dewlock
-
-# zsh - any directory on your $fpath works
-curl -sL --create-dirs \
-  https://raw.githubusercontent.com/shikaan/dewlock/main/completions/dewlock.zsh \
-  -o ~/.local/share/zsh/site-functions/_dewlock
-
-# fish
-curl -sL --create-dirs \
-  https://raw.githubusercontent.com/shikaan/dewlock/main/completions/dewlock.fish \
-  -o ~/.config/fish/completions/dewlock.fish
+make all
+sudo make install
 ```
+
+This procedure installs the executable, the man page, the shell completions,
+and the PAM configuration file. All files go under `/usr/local`. To install
+dewlock in a different directory, set the `PREFIX` variable:
+
+```sh
+make install PREFIX=~/.local
+```
+
+If you install dewlock without root permissions, this procedure does not
+install the PAM configuration file. See [Authentication](#authentication)
+for more information.
 
 ## Usage
 
@@ -60,22 +57,29 @@ uses the PAM fallback service.
 On some systems, dewlock needs a dedicated PAM configuration. Without it,
 dewlock can lock the screen and fail to unlock it.
 
-To configure PAM, run this command:
+The `sudo make install` command installs this configuration for you. If you
+installed dewlock without root permissions, run this command:
 
 ```sh
-dewlock --pam
+sudo dewlock --pam
 ```
 
 Alternatively, copy the PAM config manually:
 
 ```sh
 # from dewlock folder
-cp pam/dewlock /etc/pam.d/dewlock
+sudo cp pam/dewlock /etc/pam.d/dewlock
 ```
 
 ### Without PAM
 
-On systems without PAM, dewlock uses `shadow.h`.
+On systems without PAM, dewlock uses `shadow.h`. To select this backend, set
+`AUTH_BACKEND` at build time:
+
+```sh
+make AUTH_BACKEND=shadow all
+sudo make AUTH_BACKEND=shadow install
+```
 
 Systems with a tcb-like setup need no further action. This includes systems
 that use musl's native support or glibc with

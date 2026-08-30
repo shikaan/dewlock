@@ -31,14 +31,14 @@ RELEASE_CFLAGS := -O2 -DNDEBUG
 
 # ------------------
 
-##P BUILD_TYPE   - use 'release' to skip debug symbols (default: 'debug')
-BUILD_TYPE ?= debug
-ifeq ($(BUILD_TYPE),release)
-    CFLAGS := $(COMMON_CFLAGS) $(RELEASE_CFLAGS)
-    LDFLAGS += -s
-else
+##P BUILD_TYPE   - use 'debug' for sanitizers and debug symbols (default: 'release')
+BUILD_TYPE ?= release
+ifeq ($(BUILD_TYPE),debug)
     CFLAGS := $(COMMON_CFLAGS) $(DEBUG_CFLAGS)
     LDFLAGS += $(SANITIZERS)
+else
+    CFLAGS := $(COMMON_CFLAGS) $(RELEASE_CFLAGS)
+    LDFLAGS += -s
 endif
 
 ##P AUTH_BACKEND - 'pam' for libpam, 'shadow' for shadow (default: 'pam')
@@ -57,16 +57,31 @@ VERSION ?= v0.0.0
 ##P SHA          - SHA hash in help and manpages (default: 'dev')
 SHA ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
 
+##P PREFIX       - install prefix (default: '/usr/local')
+PREFIX ?= /usr/local
+
+##P DESTDIR      - staging directory prepended to every install path
+DESTDIR ?=
+
+##P SYSCONFDIR   - system configuration directory (default: '/etc')
+SYSCONFDIR ?= /etc
+
 # ------------------
 
-BIN_NAME = "main-${BUILD_TYPE}-${AUTH_BACKEND}"
+BINNAME = "main-${BUILD_TYPE}-${AUTH_BACKEND}"
+BINDIR := $(DESTDIR)$(PREFIX)/bin
+MANDIR := $(DESTDIR)$(PREFIX)/share/man/man1
+BASHDIR := $(DESTDIR)$(PREFIX)/share/bash-completion/completions
+ZSHDIR := $(DESTDIR)$(PREFIX)/share/zsh/site-functions
+FISHDIR := $(DESTDIR)$(PREFIX)/share/fish/vendor_completions.d
+PAMDIR := $(DESTDIR)$(SYSCONFDIR)/pam.d
 
 .PHONY: all install clean help
 
 ##T all     - build the binary (default)
 all: main docs
 
-##T docs - generate the manpage from the scdoc template
+##T docs    - generate the manpage from the scdoc template
 docs: dewlock.1.scd.tpl
 	@if command -v scdoc > /dev/null 2>&1; then \
 		echo "Generating manpage dewlock.1.roff..."; \
@@ -77,40 +92,39 @@ docs: dewlock.1.scd.tpl
 		echo "WARN: Unable to find scdoc. Skipping manpage generation."; \
 	fi
 
-##T install - install the executable, manpage and configuration
-install: MAN_FOLDER := ~/.local/share/man/man1
-install: BIN_FOLDER := ~/.local/bin
+##T install - install the executable, manpage, completions and configuration
 install:
-	@if [ "$$(id -u)" != "0" ]; then \
-		echo "ERROR: 'make install' must be run as admin. Retry with sudo.";\
-		exit 1; \
-	fi
-	@if [ ! -f ${BIN_NAME} ]; then \
+	@if [ ! -f ${BINNAME} ]; then \
 		echo "ERROR: missing or mismatching binary. You can:";\
 		echo " - run 'make BUILD_TYPE=${BUILD_TYPE} AUTH_BACKEND=${AUTH_BACKEND} all'";\
 		echo " - run 'make install' with the correct parameters";\
 		exit 1; \
 	fi
 	@echo "Installing dewlock..."
-	@mkdir -p ${BIN_FOLDER}
-	@cp ${BIN_NAME} ${BIN_FOLDER}/dewlock
-	@chmod +x ${BIN_FOLDER}/dewlock
-	@echo "Installing dewlock... DONE"
+	@install -Dm755 ${BINNAME} ${BINDIR}/dewlock
+	@echo "  Executable : ${BINDIR}/dewlock"
 	@if [ -f dewlock.1.roff ]; then \
-		echo "Installing manpages..."; \
-		mkdir -p ${MAN_FOLDER}; \
-		cp dewlock.1.roff ${MAN_FOLDER}/dewlock.1; \
-		echo "Installing manpages... DONE"; \
+		install -Dm644 dewlock.1.roff ${MANDIR}/dewlock.1; \
+		echo "  Man        : ${MANDIR}/dewlock.1"; \
 	fi
+	@install -Dm644 completions/dewlock.bash ${BASHDIR}/dewlock
+	@install -Dm644 completions/dewlock.zsh ${ZSHDIR}/_dewlock
+	@install -Dm644 completions/dewlock.fish ${FISHDIR}/dewlock.fish
+	@echo "  Completions: ${BASHDIR}, ${ZSHDIR}, ${FISHDIR}"
 ifeq ($(AUTH_BACKEND),pam)
-	@echo "Installing PAM configuration..."
-	@cp pam/dewlock /etc/pam.d/dewlock
-	@echo "Installing PAM configuration... DONE"
-else
-	@echo "Setting permissions..."
-	@chgrp shadow ${BIN_FOLDER}/dewlock
-	@chmod g+s ${BIN_FOLDER}/dewlock
-	@echo "Setting permissions... DONE"
+	@if install -Dm644 pam/dewlock ${PAMDIR}/dewlock 2>/dev/null; then \
+		echo "  PAM config : ${PAMDIR}/dewlock"; \
+	else \
+		echo "  PAM config : SKIPPED, ${PAMDIR} is not writable"; \
+		echo "               run 'sudo dewlock --pam' to install it"; \
+	fi
+endif
+	@echo "Installing dewlock... DONE"
+ifneq ($(AUTH_BACKEND),pam)
+	@echo
+	@echo "The shadow backend reads /etc/shadow. Grant access with either:"
+	@echo "  sudo chmod a+s ${PREFIX}/bin/dewlock"
+	@echo "  sudo chgrp shadow ${PREFIX}/bin/dewlock && sudo chmod g+s ${PREFIX}/bin/dewlock"
 endif
 
 ##T help    - list available targets
@@ -161,4 +175,4 @@ main: main.o protocols/ext-session-lock-v1-protocol.o src/auth.o \
 	src/background.o src/cli.o src/clock.o src/config.o src/ctx.o \
 	src/log.o src/loop.o src/password.o \
 	src/render.o src/safebuf.o src/seat.o src/unicode.o $(AUTH)
-	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o ${BIN_NAME}
+	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o ${BINNAME}
