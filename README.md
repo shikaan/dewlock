@@ -58,7 +58,7 @@ dewlock
 ```
 
 Configuration lives in a single `namespace.key=value` file (by default
-`$XDG_CONFIG_HOME/dewlock/config`). See [dewlock(1)](dewlock.1.scd) for
+`$XDG_CONFIG_HOME/dewlock/config`). See [dewlock(1)](dewlock.1.scd.tpl) for
 every option and configuration key.
 
 ## Authentication
