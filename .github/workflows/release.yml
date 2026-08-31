@@ -96,6 +96,11 @@ jobs:
           name: dewlock-deb-arm64
           path: dist
 
+      - name: Create stable-named copies
+        run: |
+          cp dist/dewlock_*_amd64.deb dist/dewlock-amd64.deb
+          cp dist/dewlock_*_arm64.deb dist/dewlock-arm64.deb
+
       - name: Attach the packages to the release
         env:
           GH_TOKEN: ${{ github.token }}

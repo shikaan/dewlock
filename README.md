@@ -8,17 +8,31 @@ A minimal, beautiful screen locker for Wayland.
   <img width="640" alt="preview" src="https://github.com/user-attachments/assets/c1cf52f0-9bc1-419e-bf82-252d1a16bb75" />
 </p>
 
-dewlock is a fork of [swaywm/swaylock](https://github.com/swaywm/swaylock),
-built for a minimal, beautiful experience.
+dewlock is a customizable screen locker built for a minimal, beautiful 
+experience.
 
-When dewlock locks the screen, it shows a password field. Enter your
-password in the field to unlock the screen.
+It's a fork of [swaywm/swaylock](https://github.com/swaywm/swaylock), but unlike
+its predecessor shows an input field while inputting a password.
 
 ## Installation
 
-There are no packaged builds yet. First, install the dependencies listed in
-[CONTRIBUTING.md](CONTRIBUTING.md). Then build and install dewlock from
-source:
+### Packaged releases
+
+Packaged releases are available at [Releases](https://github.com/shikaan/dewlock/releases/latest).
+
+For Debian-based distributions:
+
+```sh
+curl -LO https://github.com/shikaan/dewlock/releases/latest/download/dewlock-amd64.deb
+sudo apt install ./dewlock-amd64.deb
+```
+
+Replace `amd64` with `arm64` on ARM systems.
+
+### From source
+
+You can also build and install dewlock from source (see 
+[CONTRIBUTING](./CONTRIBUTING.md) for the required dependencies)
 
 ```sh
 make all
