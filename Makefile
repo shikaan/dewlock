@@ -2,7 +2,6 @@ COMMON_CFLAGS := -std=c11 \
 	-D_POSIX_C_SOURCE=200809L \
 	-Wall \
 	-Wextra \
-	-Werror \
 	-fdiagnostics-color=always \
 	-fno-common \
 	-Winit-self \
@@ -27,23 +26,27 @@ SANITIZERS := -fsanitize=address,undefined
 
 DEBUG_CFLAGS := -g -O0 $(SANITIZERS) -DDEBUG
 
-RELEASE_CFLAGS := -O2 -DNDEBUG
+# Keep debug symbols because they are needed in the packagin processes
+RELEASE_CFLAGS := -O2 -DNDEBUG -g
 
-RELEASE_DEB_CFLAGS := $(RELEASE_CFLAGS) -g
+# Allow packagers to introduce their own flags
+DISTRO_CFLAGS := $(CFLAGS)
 
 # ------------------
 
-##P BUILD_TYPE   - 'debug' for sanitizers, 'release-deb' to keep debug
-##P                symbols for packaging (default: 'release')
+##P ERR_ON_WARN  - 0 to keep warnings non-fatal (default: 1)
+ERR_ON_WARN ?= 1
+ifeq ($(ERR_ON_WARN),1)
+    COMMON_CFLAGS += -Werror
+endif
+
+##P BUILD_TYPE   - 'debug' for sanitizers (default: 'release')
 BUILD_TYPE ?= release
 ifeq ($(BUILD_TYPE),debug)
-    CFLAGS := $(COMMON_CFLAGS) $(DEBUG_CFLAGS)
+    CFLAGS := $(COMMON_CFLAGS) $(DEBUG_CFLAGS) $(DISTRO_CFLAGS)
     LDFLAGS += $(SANITIZERS)
-else ifeq ($(BUILD_TYPE),release-deb)
-    CFLAGS := $(COMMON_CFLAGS) $(RELEASE_DEB_CFLAGS)
 else
-    CFLAGS := $(COMMON_CFLAGS) $(RELEASE_CFLAGS)
-    LDFLAGS += -s
+    CFLAGS := $(COMMON_CFLAGS) $(RELEASE_CFLAGS) $(DISTRO_CFLAGS)
 endif
 
 ##P AUTH_BACKEND - 'pam' for libpam, 'shadow' for shadow (default: 'pam')
@@ -154,7 +157,7 @@ protocols/ext-session-lock-v1-client-protocol.h:
 protocols/ext-session-lock-v1-protocol.c: protocols/ext-session-lock-v1-client-protocol.h
 	wayland-scanner private-code ./protocols/ext-session-lock-v1.xml $@
 
-protocols/ext-session-lock-v1-protocol.o: CFLAGS := -O2
+protocols/ext-session-lock-v1-protocol.o: CFLAGS := -O2 $(DISTRO_CFLAGS)
 protocols/ext-session-lock-v1-protocol.o: protocols/ext-session-lock-v1-client-protocol.h \
 	protocols/ext-session-lock-v1-protocol.c
 
