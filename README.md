@@ -5,11 +5,11 @@ A minimal, beautiful screen locker for Wayland.
 </p>
 
 <p align="center">
-  <img width="640" alt="preview" src="https://github.com/user-attachments/assets/c1cf52f0-9bc1-419e-bf82-252d1a16bb75" />
+  <img width="640" alt="preview" src="https://github.com/shikaan/dewlock/blob/main/screenshot.png?raw=true" />
 </p>
 
-dewlock is a customizable screen locker built for a minimal, beautiful 
-experience.
+dewlock is a customizable screen locker for Wayland built for a minimal, 
+beautiful experience.
 
 It's a fork of [swaywm/swaylock](https://github.com/swaywm/swaylock), but unlike
 its predecessor shows an input field while inputting a password.

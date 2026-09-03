@@ -2,7 +2,7 @@ dewlock(1) "##VERSION## (##SHA##)"
 
 # NAME
 
-dewlock - Screen locker for Wayland
+dewlock - A minimal, beautiful screen locker for Wayland
 
 # SYNOPSIS
 
